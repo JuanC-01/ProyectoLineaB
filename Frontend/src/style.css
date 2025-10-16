@@ -1,0 +1,309 @@
+/* === RESET Y BASE === */
+html,
+body {
+    height: 100%;
+    margin: 0;
+    padding: 0;
+    font-family: "Inter", system-ui, sans-serif;
+    background-color: #f5f6fa;
+}
+
+#map {
+    height: 100%;
+    width: 100%;
+    position: relative;
+}
+
+/* === PANEL DE ANÁLISIS DE INCIDENTES === */
+.incident-control {
+    position: absolute;
+    top: 10px;
+    left: 35px;
+    background: #ffffff88;
+    border-radius: 12px;
+    box-shadow: 0 4px 12px rgba(0, 0, 0, 0.25);
+    overflow: hidden;
+    transition: all 0.3s ease;
+    z-index: 1000;
+}
+
+/* === Botón principal === */
+.incident-control a {
+    display: flex;
+    align-items: center;
+    justify-content: center;
+    background-color: transparent;
+    padding: 6px;
+    transition: transform 0.2s ease;
+}
+
+.incident-control a:hover {
+    transform: scale(1.1);
+}
+
+.incident-control a img {
+    width: 42px;
+    height: 42px;
+    border-radius: 50%;
+    box-shadow: 0 2px 6px rgba(0, 0, 0, 0.3);
+    cursor: pointer;
+}
+
+
+/* === PANEL DESPLEGABLE === */
+.controles-ui {
+    display: none;
+    background-color: #ffffff4f;
+    padding: 16px;
+    width: 260px;
+    box-shadow: inset 0 0 8px rgba(0, 0, 0, 0.05);
+}
+
+.incident-control.open .controles-ui {
+    display: block;
+}
+
+.controles-ui h3 {
+    margin-top: 0;
+    color: #333;
+    font-size: 16px;
+    text-align: center;
+    border-bottom: 2px solid #0078ff;
+    padding-bottom: 6px;
+    margin-bottom: 12px;
+}
+
+.controles-ui button {
+    background-color: #0078ff;
+    color: rgb(255, 255, 255);
+    border: none;
+    border-radius: 6px;
+    padding: 8px 12px;
+    width: 100%;
+    font-weight: 600;
+    cursor: pointer;
+    transition: background-color 0.3s;
+}
+
+.controles-ui button:hover {
+    background-color: #005fcc;
+}
+
+.input-group {
+    margin-top: 10px;
+}
+
+.input-group label {
+    font-size: 13px;
+    color: #555;
+    margin-bottom: 4px;
+    display: block;
+}
+
+.input-group input {
+    width: 100%;
+    padding: 8px;
+    border: 1px solid #ccc;
+    border-radius: 6px;
+    font-size: 13px;
+}
+
+#info-panel {
+    margin-top: 12px;
+    font-size: 13px;
+    color: #444;
+    text-align: center;
+    background: #f9f9f9;
+    border-radius: 6px;
+    padding: 6px;
+}
+
+/* === MARCADORES DE CLÚSTER === */
+.hospital-cluster {
+    background-clip: padding-box;
+    border-radius: 50%;
+    text-align: center;
+    color: #fff;
+    font-weight: bold;
+}
+
+.hospital-cluster div {
+    width: 34px;
+    height: 34px;
+    line-height: 34px;
+    border-radius: 50%;
+    margin: auto;
+}
+
+.hospital-cluster-small div {
+    background-color: #00c853;
+}
+
+.hospital-cluster-medium div {
+    background-color: #ffb300;
+}
+
+.hospital-cluster-large div {
+    background-color: #e53935;
+}
+
+/* === LEYENDA === */
+.legend {
+    line-height: 20px;
+    color: #333;
+    background-color: rgba(255, 255, 255, 0.9);
+    padding: 10px 14px;
+    border-radius: 8px;
+    box-shadow: 0 2px 8px rgba(0, 0, 0, 0.3);
+    font-size: 13px;
+    min-width: 160px;
+}
+
+.legend h4 {
+    margin-top: 0;
+    text-align: center;
+    border-bottom: 1px solid #ccc;
+    padding-bottom: 4px;
+}
+
+.legend i {
+    width: 18px;
+    height: 18px;
+    float: left;
+    margin-right: 8px;
+    opacity: 0.9;
+    border: 1px solid #fff;
+}
+
+/* === BOTÓN DE CALCULAR RUTA === */
+.btn-ruta {
+    width: 100%;
+    margin-top: 8px;
+    padding: 8px;
+    border: none;
+    border-radius: 6px;
+    font-weight: bold;
+    background: #ff1744;
+    color: white;
+    cursor: pointer;
+    transition: background 0.3s;
+}
+
+.btn-ruta:hover {
+    background: #d50000;
+}
+
+/* === TOAST DE MAPA BASE === */
+#map-layer-toast {
+    font-family: "Inter", sans-serif;
+    font-size: 13px;
+    text-align: center;
+}
+
+/* === ANIMACIONES === */
+@keyframes fadeIn {
+    from {
+        opacity: 0;
+        transform: translateY(8px);
+    }
+
+    to {
+        opacity: 1;
+        transform: translateY(0);
+    }
+}
+
+.controles-ui {
+    animation: fadeIn 0.3s ease;
+}
+
+
+/*Estilos para el Buscador y Autocompletado  */
+
+#search-container {
+    position: absolute;
+    top: 15px;
+    left: 50%;
+    transform: translateX(-50%);
+    z-index: 1500;
+    background: rgba(255, 255, 255, 0.534);
+    border-radius: 12px;
+    padding: 8px 12px;
+    box-shadow: 0 3px 10px rgba(0, 0, 0, 0.596);
+    width: 320px;
+  
+}
+
+#search-container div {
+    display: flex;
+    gap: 6px;
+    align-items: center;
+}
+
+#search-input {
+    border: 1px solid #ccc;
+    border-radius: 8px;
+    outline: none;
+    padding: 6px 10px;
+    font-size: 14px;
+    flex: 1; 
+}
+
+#search-input:focus {
+    border-color: #0078ff;
+    box-shadow: 0 0 4px rgba(0, 120, 255, 0.4);
+}
+
+#search-btn {
+    background: #0077ff71;
+    color: white;
+    border: none;
+    border-radius: 8px;
+    cursor: pointer;
+    padding: 6px 12px;
+    font-size: 14px;
+}
+
+#search-btn:hover {
+    background: #005fcc;
+}
+
+
+#sugerencias {
+    position: absolute;
+    top: 100%; 
+    left: 0;
+    right: 0;
+    margin: 4px 12px 0; 
+    background: #ffffffb9;
+    border: 1px solid #ccc;
+    border-radius: 8px;
+    z-index: 2000;
+    max-height: 220px;
+    overflow-y: auto;
+    box-shadow: 0 4px 8px rgba(0, 0, 0, 0.959);
+    display: none;
+}
+
+.sugerencia-item {
+    padding: 10px 12px;
+    cursor: pointer;
+    font-size: 14px;
+    display: flex;
+    justify-content: space-between;
+    align-items: center;
+    border-bottom: 1px solid #1456ac63;
+}
+
+.sugerencia-item:last-child {
+    border-bottom: none;
+}
+
+.sugerencia-item:hover {
+    background-color: #f5f5f5;
+}
+
+.sugerencia-item small {
+    color: #888;
+    font-size: 12px;
+}

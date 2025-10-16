@@ -1,0 +1,53 @@
+<!DOCTYPE html>
+<html lang="es">
+
+<head>
+    <meta charset="UTF-8" />
+    <link rel="icon" type="image/svg+xml" href="/vite.svg" />
+    <meta name="viewport" content="width=device-width, initial-scale=1.0" />
+    <title>Visor de Hospitales - Bogotá</title>
+</head>
+
+<body>
+<div id="search-container">
+  <div style="display:flex;gap:6px;align-items:center;">
+    <input id="search-input" placeholder="Buscar localidad o hospital..." autocomplete="off">
+    <button id="search-btn">🔍</button>
+  </div>
+  <ul id="search-suggestions"></ul>
+</div>
+
+
+
+    <div id="map"></div>
+
+    <div class="leaflet-control-container">
+        <div class="leaflet-top leaflet-left">
+            <div class="incident-control leaflet-bar leaflet-control">
+                <a id="toggle-incident-panel" href="#" title="Análisis de Incidentes">
+                    <svg xmlns="http://www.w3.org/2000/svg" viewBox="0 0 24 24" width="24" height="24"
+                        fill="currentColor">
+                        <path
+                            d="M12 2C6.48 2 2 6.48 2 12s4.48 10 10 10 10-4.48 10-10S17.52 2 12 2zm1 15h-2v-2h2v2zm0-4h-2V7h2v6z" />
+                    </svg>
+                </a>
+                <div class="controles-ui" id="incident-panel">
+                    <a href="#" title="Abrir panel de incidentes">
+                        <img src="/accidente.png" alt="Logo incidente">
+                    </a>
+                    <h3>Análisis de Incidentes</h3>
+                    <button id="btn-incidente">Reportar Incidente</button>
+                    <div class="input-group">
+                        <label for="distancia-buffer">Radio (m):</label>
+                        <input type="number" id="distancia-buffer" value="1000" min="100" step="100">
+                    </div>
+                    <p id="info-panel">Haz clic en el botón para iniciar.</p>
+                </div>
+            </div>
+        </div>
+    </div>
+
+    <script type="module" src="/src/main.js"></script>
+</body>
+
+</html>
