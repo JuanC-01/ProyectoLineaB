@@ -1,5 +1,20 @@
 import 'leaflet/dist/leaflet.css';
 import L from 'leaflet';
+
+// ====== FIX para los íconos de Leaflet en producción ======
+import iconUrl from 'leaflet/dist/images/marker-icon.png';
+import iconRetinaUrl from 'leaflet/dist/images/marker-icon-2x.png';
+import shadowUrl from 'leaflet/dist/images/marker-shadow.png';
+
+delete L.Icon.Default.prototype._getIconUrl;
+
+L.Icon.Default.mergeOptions({
+  iconRetinaUrl,
+  iconUrl,
+  shadowUrl,
+});
+// ==========================================================
+
 import '@geoman-io/leaflet-geoman-free/dist/leaflet-geoman.css';
 import '@geoman-io/leaflet-geoman-free';
 import 'leaflet.markercluster/dist/MarkerCluster.css';
@@ -11,13 +26,13 @@ import * as turf from '@turf/turf';
 import Swal from 'sweetalert2';
 import { initMap } from './map.js';
 import {
-    fetchAnalisisIncidente, fetchRutaOptima, fetchTodosLosHospitales,
-    fetchLocalidadesConConteo, fetchLocalidadesParaBusqueda,
-    registrarNuevoIncidente, fetchObtenerIncidentes, fetchEliminarIncidente, fetchActualizarIncidente
+  fetchAnalisisIncidente, fetchRutaOptima, fetchTodosLosHospitales,
+  fetchLocalidadesConConteo, fetchLocalidadesParaBusqueda,
+  registrarNuevoIncidente, fetchObtenerIncidentes, fetchEliminarIncidente, fetchActualizarIncidente
 } from './api.js';
 import {
-    addDepartamentosLayer, addViasLayer, addLocalidadesLayer, addHospitalesClusterLayer,
-    dibujarResultados, dibujarRuta, inicializarLeyenda, agregarItemLeyenda, quitarItemLeyenda, addHeatmapLayer
+  addDepartamentosLayer, addViasLayer, addLocalidadesLayer, addHospitalesClusterLayer,
+  dibujarResultados, dibujarRuta, inicializarLeyenda, agregarItemLeyenda, quitarItemLeyenda, addHeatmapLayer
 } from './layers.js';
 
 let capaRutaReporte = L.layerGroup();
