@@ -17,7 +17,7 @@ import {
 } from './api.js';
 import {
     addDepartamentosLayer, addViasLayer, addLocalidadesLayer, addHospitalesClusterLayer,
-    dibujarResultados, dibujarRuta, inicializarLeyenda, agregarItemLeyenda, quitarItemLeyenda
+    dibujarResultados, dibujarRuta, inicializarLeyenda, agregarItemLeyenda, quitarItemLeyenda, addHeatmapLayer
 } from './layers.js';
 
 let capaRutaReporte = L.layerGroup();
@@ -75,28 +75,25 @@ const editarIncidente = async (incidente) => {
 
     if (formValues) {
         Swal.fire({ title: 'Guardando...', didOpen: () => { Swal.showLoading(); } });
-
         const dataToUpdate = {
             nombre_accidentado: formValues.nombre,
             usuario_registro: formValues.usuario
         };
 
         const result = await fetchActualizarIncidente(incidente.id, dataToUpdate);
-
         if (result && !result.error) {
             Swal.fire(
                 '¡Actualizado!',
                 `Incidente #${incidente.id} ha sido modificado.`,
                 'success'
             );
-            cargarReportes(); // Recargar la tabla para mostrar los datos actualizados
+            cargarReportes(); 
         } else {
             Swal.fire('Error', result.error || 'No se pudo actualizar el incidente.', 'error');
         }
     }
 };
 
-// Función para eliminar un incidente
 const eliminarIncidente = async (id) => {
     const confirmacion = await Swal.fire({
         title: '¿Estás seguro?',
@@ -115,7 +112,7 @@ const eliminarIncidente = async (id) => {
 
         if (result && !result.error) {
             Swal.fire('¡Eliminado!', `El Incidente #${id} ha sido eliminado.`, 'success');
-            cargarReportes(); // Recargar la tabla
+            cargarReportes(); 
             capaRutaReporte.clearLayers();
             capaPuntoReporte.clearLayers();
         } else {
@@ -127,9 +124,7 @@ const eliminarIncidente = async (id) => {
 // Función para cargar los datos en la tabla del modal
 const cargarReportes = async () => {
     const tbody = document.querySelector('#tablaReportes tbody');
-    tbody.innerHTML = '<tr><td colspan="8">Cargando datos...</td></tr>';
-
-    // Asegurarse de que las capas de reportes estén en el mapa
+    tbody.innerHTML = '<tr><td colspan="8">Cargando datos...</td></tr>'; 
     if (!map.hasLayer(capaRutaReporte)) capaRutaReporte.addTo(map);
     if (!map.hasLayer(capaPuntoReporte)) capaPuntoReporte.addTo(map);
 
@@ -145,10 +140,9 @@ const cargarReportes = async () => {
         return;
     }
 
-    tbody.innerHTML = ''; // Limpiar el "Cargando..."
+    tbody.innerHTML = ''; 
     data.forEach(incidente => {
         const row = tbody.insertRow();
-        // Celdas de datos
         row.insertCell().textContent = incidente.id;
         row.insertCell().textContent = incidente.nombre_accidentado;
         row.insertCell().textContent = incidente.usuario_registro;
@@ -157,39 +151,34 @@ const cargarReportes = async () => {
         row.insertCell().textContent = incidente.distancia_km;
         row.insertCell().textContent = incidente.tiempo_min;
 
-        // Celda de acciones (ver y eliminar)
         const actionsCell = row.insertCell();
+        actionsCell.className = 'celda-acciones'; 
 
-        // Botón Ver
         const btnVer = document.createElement('button');
-        btnVer.textContent = '🗺️ Ver';
-        btnVer.className = 'btn-ver-incidente';
+        btnVer.textContent = 'Ver';
+        btnVer.className = 'btn-tabla btn-ver-incidente'; 
         btnVer.onclick = () => verIncidenteEnMapa(incidente);
         actionsCell.appendChild(btnVer);
 
         const btnEditar = document.createElement('button');
-        btnEditar.textContent = '✏️ Editar';
-        btnEditar.className = 'btn-editar-incidente';
+        btnEditar.textContent = 'Editar';
+        btnEditar.className = 'btn-tabla btn-editar-incidente'; 
         btnEditar.onclick = () => editarIncidente(incidente);
         actionsCell.appendChild(btnEditar);
 
-        // Botón Eliminar
         const btnEliminar = document.createElement('button');
-        btnEliminar.textContent = '❌ Eliminar';
-        btnEliminar.className = 'btn-eliminar-incidente';
-        btnEliminar.style.marginLeft = '5px';
+        btnEliminar.textContent = 'Eliminar';
+        btnEliminar.className = 'btn-tabla btn-eliminar-incidente';
         btnEliminar.onclick = () => eliminarIncidente(incidente.id);
         actionsCell.appendChild(btnEliminar);
     });
 };
-
 // =======================================================
 // INICIALIZACIÓN PRINCIPAL DEL MAPA
 // =======================================================
-
 document.addEventListener('DOMContentLoaded', async () => {
     const mapObject = initMap();
-    map = mapObject.map; // Asignamos el mapa a la variable global
+    map = mapObject.map; 
     const baseMaps = mapObject.baseMaps;
 
     let capaBaseInicial = null;
@@ -211,34 +200,30 @@ document.addEventListener('DOMContentLoaded', async () => {
     const viasCapa = addViasLayer(map);
     const localidadesCapa = await addLocalidadesLayer(map);
     const hospitalesCapa = await addHospitalesClusterLayer(map);
-
+    const heatLayer = await addHeatmapLayer();
     localidadesCapa.addTo(map);
     hospitalesCapa.addTo(map);
-
     agregarItemLeyenda("Localidades");
     agregarItemLeyenda("Hospitales");
-
     const overlayMaps = {
         "Departamentos": departamentosCapa,
         "Vías": viasCapa,
         "Localidades": localidadesCapa,
-        "Hospitales": hospitalesCapa
+        "Hospitales": hospitalesCapa,
+        "Mapa de Calor": heatLayer
+        
     };
     L.control.layers(baseMaps, overlayMaps).addTo(map);
-
-    // LEYENDA dinámica
+  
     map.on('overlayadd', e => agregarItemLeyenda(e.name));
     map.on('overlayremove', e => quitarItemLeyenda(e.name));
-
     // =======================================================
     // ESTADO Y LÓGICA DE REGISTRO DE INCIDENTES
     // =======================================================
-
     let incidenteActual = null;
-
     const btnRegistrar = document.getElementById('btnRegistrar');
     if (btnRegistrar) {
-        btnRegistrar.style.display = 'none'; // Inicialmente oculto
+        btnRegistrar.style.display = 'none'; 
     }
 
     const mostrarFormularioRegistro = async () => {
@@ -291,7 +276,6 @@ document.addEventListener('DOMContentLoaded', async () => {
                 incidenteActual = null;
                 if (btnRegistrar) btnRegistrar.style.display = 'none';
 
-                // Limpiar elementos de análisis del mapa
                 bufferLayer.clearLayers();
                 map.eachLayer(layer => {
                     if (layer.options && layer.options.className === 'ruta-incidente') {
@@ -306,15 +290,12 @@ document.addEventListener('DOMContentLoaded', async () => {
             }
         }
     };
-
     if (btnRegistrar) {
         btnRegistrar.onclick = mostrarFormularioRegistro;
     }
-
     // =======================================================
     // PANEL DE ANÁLISIS DE INCIDENTES
     // =======================================================
-
     const toggleButton = document.getElementById('toggle-incident-panel');
     const incidentControl = toggleButton.parentElement;
     const btnIncidente = document.getElementById('btn-incidente');
@@ -326,11 +307,10 @@ document.addEventListener('DOMContentLoaded', async () => {
     toggleButton.onclick = (e) => { e.preventDefault(); incidentControl.classList.toggle('open'); };
     btnIncidente.onclick = () => {
         infoPanel.textContent = 'Haz clic en el mapa para marcar la ubicación.';
-        incidentControl.classList.remove('open');
         incidenteActual = null;
         if (btnRegistrar) { btnRegistrar.style.display = 'none'; }
         bufferLayer.clearLayers();
-        capaRutaReporte.clearLayers(); // Limpiar capas de reporte al iniciar nuevo análisis
+        capaRutaReporte.clearLayers(); 
         capaPuntoReporte.clearLayers();
 
         map.pm.enableDraw('Marker', {
@@ -368,9 +348,7 @@ document.addEventListener('DOMContentLoaded', async () => {
         map.pm.disableDraw();
         ejecutarAnalisis();
     });
-
     bufferInput.addEventListener('keydown', (e) => { if (e.key === 'Enter') ejecutarAnalisis(); });
-
     // CÁLCULO DE RUTA Y REGISTRO
     map.on('popupopen', (e) => {
         const popupNode = e.popup._container;
@@ -378,23 +356,18 @@ document.addEventListener('DOMContentLoaded', async () => {
         if (btn) {
             btn.onclick = async () => {
                 infoPanel.textContent = 'Calculando ruta óptima...';
-
                 const hospitalLat = btn.dataset.lat;
                 const hospitalLon = btn.dataset.lon;
                 const hospitalName = btn.dataset.name;
-
                 const coords = { lat_inicio: puntoIncidente.lat, lon_inicio: puntoIncidente.lng, lat_fin: hospitalLat, lon_fin: hospitalLon };
-
                 const resultadoRuta = await fetchRutaOptima(coords);
                 if (resultadoRuta && resultadoRuta.ruta) {
                     dibujarRuta(map, resultadoRuta.ruta);
-
                     const distanciaKm = turf.length(resultadoRuta.ruta, { units: 'kilometers' });
                     const velocidadKmH = 40;
                     const tiempoHoras = distanciaKm / velocidadKmH;
                     const tiempoMinutos = Math.round(tiempoHoras * 60);
                     const rutaGeoJSON = JSON.stringify(resultadoRuta.ruta);
-
                     incidenteActual = {
                         lat: puntoIncidente.lat,
                         lng: puntoIncidente.lng,
@@ -403,7 +376,6 @@ document.addEventListener('DOMContentLoaded', async () => {
                         tiempo_min: tiempoMinutos,
                         geom_ruta_geojson: rutaGeoJSON
                     };
-
                     if (btnRegistrar) {
                         btnRegistrar.style.display = 'block';
                     }
@@ -411,7 +383,7 @@ document.addEventListener('DOMContentLoaded', async () => {
                     infoPanel.textContent = `Ruta calculada con éxito al hospital: ${hospitalName}.
                     Distancia: ${distanciaKm.toFixed(2)} km.
                     Tiempo estimado: ${tiempoMinutos} min.
-                    ⚠️ El hospital de destino ha sido seleccionado automáticamente. Presiona "Registrar" para guardar el incidente.`;
+                    ⚠️ Se ha seleccionado el hospital de destino. Presiona "Registrar" para guardar el incidente.`;
                 } else {
                     infoPanel.textContent = 'No se pudo calcular la ruta.';
                     if (btnRegistrar) { btnRegistrar.style.display = 'none'; }
@@ -423,33 +395,51 @@ document.addEventListener('DOMContentLoaded', async () => {
         }
     });
 
-    // =======================================================
-    // LÓGICA DEL MODAL DE REPORTES
-    // =======================================================
-    const modalReportes = document.getElementById('modalReportes');
-    const btnReportes = document.getElementById('btn-reportes');
-    const cerrarModal = document.getElementById('cerrarModal');
+// =======================================================
+// LÓGICA DEL MODAL DE REPORTES (CON FILTROS)
+// =======================================================
+const modalReportes = document.getElementById('modalReportes');
+const btnReportes = document.getElementById('btn-reportes');
+const cerrarModal = document.getElementById('cerrarModal');
+const inputFecha = document.getElementById('filtro-fecha');
+const btnFiltrar = document.getElementById('btn-filtrar-fecha');
+const btnLimpiarFiltro = document.getElementById('btn-limpiar-filtro');
 
-    if (btnReportes) {
-        btnReportes.onclick = () => {
-            modalReportes.style.display = 'block';
-            cargarReportes(); // Cargar los datos cada vez que se abre
-        };
+
+if (btnReportes) {
+    btnReportes.onclick = () => {
+        modalReportes.style.display = 'flex'; 
+        inputFecha.value = ''; 
+        cargarReportes(); 
+    };
+}
+
+if (cerrarModal) {
+    cerrarModal.onclick = () => {
+        modalReportes.style.display = 'none';
+    };
+}
+window.onclick = (event) => {
+    if (event.target == modalReportes) {
+        modalReportes.style.display = 'none';
     }
-
-    if (cerrarModal) {
-        cerrarModal.onclick = () => {
-            modalReportes.style.display = 'none';
-        };
-    }
-
-    // Cerrar el modal al hacer clic fuera de él
-    window.onclick = (event) => {
-        if (event.target == modalReportes) {
-            modalReportes.style.display = 'none';
+};
+if (btnFiltrar) {
+    btnFiltrar.onclick = () => {
+        const fecha = inputFecha.value;
+        if (fecha) {
+            cargarReportes(fecha); 
+        } else {
+            Swal.fire('Atención', 'Por favor, selecciona una fecha para filtrar.', 'info');
         }
     };
-
+}
+if (btnLimpiarFiltro) {
+    btnLimpiarFiltro.onclick = () => {
+        inputFecha.value = ''; 
+        cargarReportes();
+    };
+}
     // =======================================================
     // BUSCADOR DE LOCALIDADES Y HOSPITALES
     // =======================================================
@@ -467,7 +457,6 @@ document.addEventListener('DOMContentLoaded', async () => {
             fetchLocalidadesParaBusqueda(),
             fetchTodosLosHospitales()
         ]);
-
         const localidadesMapeadas = (localidades?.features || []).map(f => ({ nombre: f.properties.locnombre, tipo: 'Localidad', feature: f }));
         const hospitalesMapeados = (hospitales?.features || []).map(h => ({ nombre: h.properties.nombre, tipo: 'Hospital', feature: h }));
         datosBusqueda = [...localidadesMapeadas, ...hospitalesMapeados];
@@ -477,7 +466,6 @@ document.addEventListener('DOMContentLoaded', async () => {
         const texto = searchInput.value.trim().toLowerCase();
         sugerenciasDiv.innerHTML = '';
         if (!texto) { sugerenciasDiv.style.display = 'none'; return; }
-
         const coincidencias = datosBusqueda.filter(item => item.nombre?.toLowerCase().includes(texto));
         coincidencias.slice(0, 7).forEach(item => {
             const div = document.createElement('div');
@@ -492,13 +480,11 @@ document.addEventListener('DOMContentLoaded', async () => {
         });
         sugerenciasDiv.style.display = coincidencias.length ? 'block' : 'none';
     });
-
     document.addEventListener('click', (e) => {
         if (!searchInput.parentElement.contains(e.target)) {
             sugerenciasDiv.style.display = 'none';
         }
     });
-
     function mostrarResultadoBusqueda(item) {
         resultadosBusquedaLayer.clearLayers();
         if (item.tipo === 'Localidad') {
@@ -521,7 +507,6 @@ document.addEventListener('DOMContentLoaded', async () => {
             }
         }
     }
-
     searchBtn.addEventListener('click', () => {
         const texto = searchInput.value.trim().toLowerCase();
         const primeraCoincidencia = datosBusqueda.find(item => item.nombre?.toLowerCase() === texto);

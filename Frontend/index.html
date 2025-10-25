@@ -6,65 +6,95 @@
     <link rel="icon" type="image/svg+xml" href="/vite.svg" />
     <meta name="viewport" content="width=device-width, initial-scale=1.0" />
     <title>Visor de Hospitales - Bogotá</title>
-    <!-- Vinculamos el CSS del modal -->
-    <link rel="stylesheet" href="/src/styles/reportes.css">
+
+    <link rel="stylesheet" href="./src/style.css">
 </head>
 
 <body>
-    <div id="search-container">
-        <div style="display:flex;gap:6px;align-items:center;">
-            <input id="search-input" placeholder="Buscar localidad o hospital..." autocomplete="off">
-            <button id="search-btn">🔍</button>
-        </div>
-        <ul id="search-suggestions"></ul>
-    </div>
+    <header class="main-header">
+        <h1>🏥 Visor Interactivo de Hospitales - Bogotá D.C.</h1>
+    </header>
+    <main class="main-content">
+        <section id="search-container" aria-label="Buscar hospitales o localidades">
+            <div style="display:flex;gap:6px;align-items:center;">
+                <input id="search-input" placeholder="Buscar localidad o hospital..." autocomplete="off"
+                    aria-label="Buscar hospital o localidad">
+                <button id="search-btn" type="button" aria-label="Buscar">🔍</button>
+            </div>
+            <ul id="search-suggestions" role="listbox"></ul>
+        </section>
 
-    <div id="incident-control" class="custom-control">
-        <button id="btnRegistrar" style="background-color: #dc3545; color: white; display: none; margin-top: 10px;">
-            🚨 Registrar Incidente
-        </button>
-    </div>
+        <div id="incident-control" class="custom-control"></div>
 
-    <div id="map"></div>
+        <div id="map" role="application" aria-label="Mapa de hospitales"></div>
 
-    <div class="leaflet-control-container">
-        <div class="leaflet-top leaflet-left">
-            <div class="incident-control leaflet-bar leaflet-control">
-                <a id="toggle-incident-panel" href="#" title="Análisis de Incidentes">
-                    <svg xmlns="http://www.w3.org/2000/svg" viewBox="0 0 24 24" width="24" height="24"
-                        fill="currentColor">
-                        <path
-                            d="M12 2C6.48 2 2 6.48 2 12s4.48 10 10 10 10-4.48 10-10S17.52 2 12 2zm1 15h-2v-2h2v2zm0-4h-2V7h2v6z" />
-                    </svg>
-                </a>
+        <div class="leaflet-control-container">
+            <div class="leaflet-top leaflet-left">
+<div class="custom-controls-wrapper">
+                <div class="incident-control leaflet-bar leaflet-control">
 
-                <div class="controles-ui" id="incident-panel">
-                    <a href="#" title="Abrir panel de incidentes">
-                        <img src="/accidente.png" alt="Logo incidente">
+                    <a id="toggle-incident-panel" href="#" title="Análisis de Incidentes" class="incident-toggle-btn">
+                        <img src="/accidente.png" alt="Análisis de Incidentes">
                     </a>
-                    <h3>Análisis de Incidentes</h3>
-                    <button id="btn-incidente">Reportar Incidente</button>
-                    <div class="input-group">
-                        <label for="distancia-buffer">Radio (m):</label>
-                        <input type="number" id="distancia-buffer" value="1000" min="100" step="100">
-                    </div>
-                    <p id="info-panel">Haz clic en el botón para iniciar.</p>
 
-                    <!-- 🧾 Nuevo botón de reportes -->
-                    <button id="btn-reportes">📋 Ver Reportes</button>
+                    <div class="controles-ui" id="incident-panel">
+                        <h3>Análisis de Incidentes</h3>
+
+                        <p id="info-panel">
+                            Define un radio y presiona "Analizar" para encontrar el hospital más cercano.
+                        </p>
+
+                        <div class="input-group">
+                            <label for="distancia-buffer">Radio de análisis (m):</label>
+                            <input type="number" id="distancia-buffer" value="2000" min="100" step="100">
+                        </div>
+
+                        <div class="panel-actions-group">
+
+                            <button id="btn-incidente" type="button" class="btn-primary">
+                                📍 Analizar Ruta
+                            </button>
+
+
+                            <button id="btnRegistrar" type="button" class="btn-success">
+                                Registrar Incidente
+                            </button>
+
+                        </div>
+                    </div>
                 </div>
+
+                <div class="leaflet-bar leaflet-control">
+                    <a id="btn-reportes" href="#" title="Ver Reportes" class="report-toggle-btn">
+                        <svg xmlns="http://www.w3.org/2000/svg" viewBox="0 0 24 24" width="24" height="24"
+                            fill="currentColor" aria-hidden="true">
+                            <path
+                                d="M14 2H6c-1.1 0-2 .9-2 2v16c0 1.1.9 2 2 2h12c1.1 0 2-.9 2-2V8l-6-6zM6 20V4h7v5h5v11H6zM8 11h8v2H8v-2zm0 4h8v2H8v-2z" />
+                        </svg>
+                    </a>
+                </div>
+</div>
             </div>
         </div>
-    </div>
 
-    <!-- 🧾 Modal de reportes -->
-    <div id="modalReportes">
-        <div id="modal-content">
-            <div id="modal-header">
-                <h2>📊 Reporte de Incidentes</h2>
-                <span id="cerrarModal">&times;</span>
-            </div>
+    </main>
+
+    <div id="modalReportes" role="dialog" aria-modal="true" aria-labelledby="modal-header">
+    <div id="modal-content">
+        <div id="modal-header">
+            <h2>Reporte de Incidentes</h2>
+            <button id="cerrarModal" aria-label="Cerrar">&times;</button>
+        </div>
+
+        <div class="report-filters">
+            <label for="filtro-fecha">Filtrar por fecha:</label>
+            <input type="date" id="filtro-fecha">
+            <button id="btn-filtrar-fecha" class="btn-tabla btn-ver-incidente">Filtrar</button>
+            <button id="btn-limpiar-filtro" class="btn-tabla btn-editar-incidente">Quitar Filtro</button>
+        </div>
+        <div class="tabla-container">
             <table id="tablaReportes">
+                <caption>Reporte de incidentes registrados en hospitales de Bogotá D.C.</caption>
                 <thead>
                     <tr>
                         <th>ID</th>
@@ -74,16 +104,18 @@
                         <th>Hospital</th>
                         <th>Distancia (km)</th>
                         <th>Tiempo (min)</th>
+                        <th>Acciones</th>
                     </tr>
                 </thead>
                 <tbody>
                     <tr>
-                        <td colspan="7">Cargando datos...</td>
+                        <td colspan="8">Cargando datos...</td>
                     </tr>
                 </tbody>
             </table>
         </div>
     </div>
+</div>
 
     <script type="module" src="/src/main.js"></script>
 </body>

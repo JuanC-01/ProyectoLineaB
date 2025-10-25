@@ -1,8 +1,7 @@
 import L from 'leaflet';
+import 'leaflet.heat';
 import * as turf from '@turf/turf';
-import { fetchTodosLosHospitales, fetchLocalidadesConConteo } from './api.js';
-
-// --- CAPAS GLOBALES ---
+import { fetchTodosLosHospitales, fetchLocalidadesConConteo, fetchObtenerIncidentes } from './api.js';
 const resultadosLayer = L.featureGroup();
 const rutaLayer = L.layerGroup();
 let hospitalesClusterLayer;
@@ -29,8 +28,6 @@ function estiloLocalidad(feature) {
 // --- NUEVA LÓGICA DE LEYENDA ---
 const leyendaItems = {};
 let baseMapActivo = 'Normal';
-
-// 🔹 Inicializa la leyenda y la vincula a los eventos del mapa
 export const inicializarLeyenda = (map, baseMaps) => {
     if (leyendaControl) map.removeControl(leyendaControl);
 
@@ -46,21 +43,15 @@ export const inicializarLeyenda = (map, baseMaps) => {
         return div;
     };
     leyendaControl.addTo(map);
-
-    // --- Detectar cambio de mapa base ---
     map.on('baselayerchange', (e) => {
         baseMapActivo = e.name;
         actualizarLeyenda();
     });
-
-    // --- Detectar overlays ---
     map.on('overlayadd', (e) => agregarItemLeyenda(e.name));
     map.on('overlayremove', (e) => quitarItemLeyenda(e.name));
 
     actualizarLeyenda();
 };
-
-// 🔹 Actualiza el contenido HTML de la leyenda
 export const actualizarLeyenda = () => {
     if (!leyendaControl) return;
     const div = leyendaControl.getContainer();
@@ -120,6 +111,15 @@ export const agregarItemLeyenda = (nombreCapa) => {
             leyendaItems[nombreCapa] = `
         <div class="leyenda-item">
           <img src="/hospital.png" height="20" width="20"> Hospitales
+        </div>`;
+            break;
+        case "Mapa de Calor":
+            leyendaItems[nombreCapa] = `
+        <div class="leyenda-item" style="line-height: 1.3;">
+            <strong>Densidad de Incidentes</strong><br>
+                <div class="heatmap-legend-gradient"></div>
+                <span style="float: left; font-size: 11px;">Baja</span>
+                <span style="float: right; font-size: 11px;">Alta</span>
         </div>`;
             break;
     }
@@ -205,8 +205,6 @@ export const addHospitalesClusterLayer = async (map) => {
             pointToLayer: (feature, latlng) => L.marker(latlng, { icon: hospitalIcon }),
             onEachFeature: (feature, layer) => {
                 const props = feature.properties;
-
-                // --- CÓDIGO MODIFICADO CON TU RUTA ---
                 const popupContent = `
                     <b>${props.nombre}</b><br>  
                     <img src="/hospital.jpg" alt="Hospital" style="width:100%; max-height:150px; object-fit:cover; margin-top:5px; border-radius: 4px;">
@@ -215,9 +213,7 @@ export const addHospitalesClusterLayer = async (map) => {
                     <strong>Nivel:</strong> ${props.nivel || 'No disponible'}<br>
                     <strong>Tipo:</strong> ${props.tipo || 'No disponible'}<br>
                     <strong>Prestador:</strong> ${props.prestador || 'No disponible'}
-`;
-                // --- FIN DE LA MODIFICACIÓN ---
-
+                `;
                 layer.bindPopup(popupContent);
             }
         });
@@ -227,20 +223,16 @@ export const addHospitalesClusterLayer = async (map) => {
 };
 
 // --- DIBUJAR RESULTADOS ---
-// Muestra hospitales dentro del buffer + distancia y tiempo estimado en línea recta
 export const dibujarResultados = (map, latlng, data) => {
     resultadosLayer.clearLayers();
     rutaLayer.clearLayers();
-
-    // Si hay hospitales cargados globalmente, los quitamos temporalmente
     if (map.hasLayer(hospitalesClusterLayer)) map.removeLayer(hospitalesClusterLayer);
 
-    // 📍 Agregar marcador del incidente
     const markerIncidente = L.marker(latlng).bindPopup("📍 Punto del incidente");
     markerIncidente.addTo(resultadosLayer);
 
     if (data.hospitalesEnBuffer && data.hospitalesEnBuffer.length > 0) {
-        const velocidadKmH = 40; // velocidad urbana promedio
+        const velocidadKmH = 40;
         const puntoIncidente = turf.point([latlng.lng, latlng.lat]);
 
         L.geoJSON(data.hospitalesEnBuffer, {
@@ -248,8 +240,6 @@ export const dibujarResultados = (map, latlng, data) => {
             onEachFeature: (feature, layer) => {
                 const props = feature.properties;
                 const coords = feature.geometry.coordinates;
-
-                //  Calcular distancia y tiempo estimado en línea recta
                 const puntoHospital = turf.point(coords);
                 const distanciaKm = turf.distance(puntoIncidente, puntoHospital, { units: 'kilometers' });
                 const tiempoMin = Math.round((distanciaKm / velocidadKmH) * 60);
@@ -296,4 +286,31 @@ export const dibujarRuta = (map, rutaGeoJSON) => {
     } else {
         alert('No se pudo calcular la ruta.');
     }
+};
+
+// --- CAPA DE MAPA DE CALOR (HEATMAP) ---
+export const addHeatmapLayer = async () => {
+    const heatLayer = L.heatLayer([], {
+        radius: 35,
+        blur: 25,
+        maxZoom: 17,
+        max: 0.5,
+        gradient: { 0.4: 'yellow', 0.8: 'orange', 1.0: 'red' }
+    });
+    const poblarMapaDeCalor = async () => {
+        const data = await fetchObtenerIncidentes();
+
+        if (data && !data.error && Array.isArray(data)) {
+            const heatPoints = data
+                .filter(incidente => incidente.punto_geojson && incidente.punto_geojson.coordinates)
+                .map(incidente => {
+                    const coords = incidente.punto_geojson.coordinates;
+                    return [coords[1], coords[0], 0.5];
+                });
+            heatLayer.setLatLngs(heatPoints);
+        }
+    };
+
+    poblarMapaDeCalor();
+    return heatLayer;
 };

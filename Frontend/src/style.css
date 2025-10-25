@@ -1,4 +1,3 @@
-/* === RESET Y BASE === */
 html,
 body {
     height: 100%;
@@ -8,55 +7,103 @@ body {
     background-color: #f5f6fa;
 }
 
+body {
+    display: flex;
+    flex-direction: column;
+}
+
+/* === HEADER === */
+.main-header {
+    background-color: #2c3e50;
+    color: white;
+    padding: 12px 20px;
+    text-align: center;
+    box-shadow: 0 2px 5px rgba(0, 0, 0, 0.2);
+    flex-shrink: 0;
+    z-index: 1100;
+}
+
+.main-header h1 {
+    margin: 0;
+    font-size: 1.6em;
+    font-weight: 600;
+}
+
+/* === CONTENIDO PRINCIPAL Y MAPA === */
+.main-content {
+    flex-grow: 1;
+    position: relative;
+    overflow: hidden;
+}
+
 #map {
     height: 100%;
     width: 100%;
-    position: relative;
 }
 
 /* === PANEL DE ANÁLISIS DE INCIDENTES === */
 .incident-control {
-    position: absolute;
-    top: 10px;
-    left: 35px;
-    background: #ffffff88;
-    border-radius: 12px;
-    box-shadow: 0 4px 12px rgba(0, 0, 0, 0.25);
-    overflow: hidden;
-    transition: all 0.3s ease;
-    z-index: 1000;
+    display: flex;
+    align-items: flex-start;
 }
 
-/* === Botón principal === */
-.incident-control a {
+.incident-toggle-btn {
     display: flex;
     align-items: center;
     justify-content: center;
-    background-color: transparent;
-    padding: 6px;
+    width: 44px;
+    height: 44px;
+    background-color: #ffffff;
+    border: 2px solid #ccc;
+    border-radius: 12px;
+    box-shadow: 0 3px 10px rgba(0, 0, 0, 0.2);
+    cursor: pointer;
+    transition: all 0.2s ease;
+}
+
+.incident-toggle-btn:hover {
+    border-color: #0078ff;
+}
+
+.incident-toggle-btn img {
+    width: 32px;
+    height: 32px;
     transition: transform 0.2s ease;
 }
 
-.incident-control a:hover {
+.incident-toggle-btn:hover img {
     transform: scale(1.1);
 }
 
-.incident-control a img {
-    width: 42px;
-    height: 42px;
-    border-radius: 50%;
-    box-shadow: 0 2px 6px rgba(0, 0, 0, 0.3);
-    cursor: pointer;
+/* === PANEL DESPLEGABLE  === */
+.controles-ui {
+    display: none;
+    background: rgba(255, 255, 255, 0.95);
+    backdrop-filter: blur(8px);
+    border-radius: 14px;
+    box-shadow: 0 8px 20px rgba(0, 0, 0, 0.25);
+    padding: 16px;
+    width: 260px;
+    animation: fadeIn 0.3s ease;
+    margin-left: 10px;
 }
 
+.controles-ui.visible {
+    display: block;
+}
+
+.btn-primary:hover {
+    background-color: #005fcc;
+}
 
 /* === PANEL DESPLEGABLE === */
 .controles-ui {
     display: none;
-    background-color: #ffffff4f;
+    background-color: rgba(255, 255, 255, 0.9);
     padding: 16px;
     width: 260px;
     box-shadow: inset 0 0 8px rgba(0, 0, 0, 0.05);
+    animation: fadeIn 0.3s ease;
 }
 
 .incident-control.open .controles-ui {
@@ -73,25 +120,6 @@ body {
     margin-bottom: 12px;
 }
 
-.controles-ui button {
-    background-color: #0078ff;
-    color: rgb(255, 255, 255);
-    border: none;
-    border-radius: 6px;
-    padding: 8px 12px;
-    width: 100%;
-    font-weight: 600;
-    cursor: pointer;
-    transition: background-color 0.3s;
-}
-
-.controles-ui button:hover {
-    background-color: #005fcc;
-}
-
-.input-group {
-    margin-top: 10px;
-}
 
 .input-group label {
     font-size: 13px;
@@ -118,21 +146,20 @@ body {
     padding: 6px;
 }
 
-/* === MARCADORES DE CLÚSTER === */
-.hospital-cluster {
-    background-clip: padding-box;
-    border-radius: 50%;
-    text-align: center;
-    color: #fff;
-    font-weight: bold;
-}
 
-.hospital-cluster div {
+/* === CLUSTERS DE HOSPITALES === */
+.hospital-cluster div,
+.hospital-cluster-small div,
+.hospital-cluster-medium div,
+.hospital-cluster-large div {
     width: 34px;
     height: 34px;
     line-height: 34px;
     border-radius: 50%;
     margin: auto;
+    text-align: center;
+    color: #fff;
+    font-weight: bold;
 }
 
 .hospital-cluster-small div {
@@ -149,9 +176,10 @@ body {
 
 /* === LEYENDA === */
 .legend {
+    z-index: 1000;
     line-height: 20px;
     color: #333;
-    background-color: rgba(255, 255, 255, 0.9);
+    background-color: rgba(255, 255, 255, 0.493);
     padding: 10px 14px;
     border-radius: 8px;
     box-shadow: 0 2px 8px rgba(0, 0, 0, 0.3);
@@ -175,63 +203,18 @@ body {
     border: 1px solid #fff;
 }
 
-/* === BOTÓN DE CALCULAR RUTA === */
-.btn-ruta {
-    width: 100%;
-    margin-top: 8px;
-    padding: 8px;
-    border: none;
-    border-radius: 6px;
-    font-weight: bold;
-    background: #ff1744;
-    color: white;
-    cursor: pointer;
-    transition: background 0.3s;
-}
-
-.btn-ruta:hover {
-    background: #d50000;
-}
-
-/* === TOAST DE MAPA BASE === */
-#map-layer-toast {
-    font-family: "Inter", sans-serif;
-    font-size: 13px;
-    text-align: center;
-}
-
-/* === ANIMACIONES === */
-@keyframes fadeIn {
-    from {
-        opacity: 0;
-        transform: translateY(8px);
-    }
-
-    to {
-        opacity: 1;
-        transform: translateY(0);
-    }
-}
-
-.controles-ui {
-    animation: fadeIn 0.3s ease;
-}
-
-
-/*Estilos para el Buscador y Autocompletado  */
-
+/* === BUSCADOR === */
 #search-container {
     position: absolute;
     top: 15px;
     left: 50%;
     transform: translateX(-50%);
-    z-index: 1500;
-    background: rgba(255, 255, 255, 0.534);
+    z-index: 1050;
+    background: rgba(255, 255, 255, 0.95);
     border-radius: 12px;
     padding: 8px 12px;
-    box-shadow: 0 3px 10px rgba(0, 0, 0, 0.596);
+    box-shadow: 0 3px 10px rgba(0, 0, 0, 0.2);
     width: 320px;
-  
 }
 
 #search-container div {
@@ -246,7 +229,7 @@ body {
     outline: none;
     padding: 6px 10px;
     font-size: 14px;
-    flex: 1; 
+    flex: 1;
 }
 
 #search-input:focus {
@@ -268,20 +251,19 @@ body {
     background: #005fcc;
 }
 
-
-#sugerencias {
+#search-suggestions {
     position: absolute;
-    top: 100%; 
+    top: 100%;
     left: 0;
     right: 0;
-    margin: 4px 12px 0; 
+    margin: 4px 0 0;
     background: #ffffffb9;
     border: 1px solid #ccc;
     border-radius: 8px;
     z-index: 2000;
     max-height: 220px;
     overflow-y: auto;
-    box-shadow: 0 4px 8px rgba(0, 0, 0, 0.959);
+    box-shadow: 0 4px 8px rgba(0, 0, 0, 0.15);
     display: none;
 }
 
@@ -308,76 +290,93 @@ body {
     font-size: 12px;
 }
 
-/* ===== Estilos del botón de reportes ===== */
-#btn-reportes {
-    background-color: #0d6efd;
-    color: white;
-    border: none;
-    border-radius: 5px;
-    padding: 8px 12px;
+/* === BOTÓN REPORTES === */
+.report-toggle-btn {
+    display: flex;
+    align-items: center;
+    justify-content: center;
+    width: 44px;
+    height: 44px;
+    background-color: #ffffff;
+    border: 2px solid #ccc;
+    border-radius: 12px;
+    box-shadow: 0 3px 10px rgba(0, 0, 0, 0.2);
     cursor: pointer;
-    width: 100%;
-    margin-top: 10px;
-    transition: background-color 0.3s ease;
+    transition: all 0.2s ease;
+    color: #333;
+    border-bottom: 2px solid #ccc !important;
 }
 
-#btn-reportes:hover {
-    background-color: #0b5ed7;
+.report-toggle-btn:hover {
+    border-color: #0078ff;
 }
 
-/* ===== Modal de reportes ===== */
+.report-toggle-btn svg {
+    width: 24px;
+    height: 24px;
+}
+
+/* === MODAL DE REPORTES === */
 #modalReportes {
     display: none;
     position: fixed;
-    z-index: 9999;
+    z-index: 5000;
     left: 0;
     top: 0;
     width: 100%;
     height: 100%;
-    overflow: auto;
-    background-color: rgba(0, 0, 0, 0.4);
+    overflow: hidden;
+    background-color: rgba(0, 0, 0, 0.6);
+    align-items: center;
+    justify-content: center;
 }
 
-/* ===== Contenido del modal ===== */
 #modal-content {
     background-color: #fff;
-    margin: 5% auto;
-    padding: 20px;
     border-radius: 12px;
     width: 80%;
     max-width: 900px;
+    max-height: 90vh; 
     box-shadow: 0 2px 10px rgba(0, 0, 0, 0.3);
+    padding: 20px;
     animation: fadeIn 0.3s ease;
+    overflow-y: auto;
 }
 
-/* ===== Encabezado ===== */
 #modal-header {
     display: flex;
     justify-content: space-between;
     align-items: center;
-    border-bottom: 2px solid #007bff;
-    padding-bottom: 10px;
+    border-bottom: 1px solid #dee2e6;
+    padding-bottom: 16px;
+    margin-bottom: 20px;
+    flex-shrink: 0;
 }
 
 #modal-header h2 {
     margin: 0;
-    color: #007bff;
+    color: #333;
+    font-size: 1.5rem;
 }
 
 #cerrarModal {
     cursor: pointer;
-    font-size: 22px;
-    font-weight: bold;
-    color: #dc3545;
-    transition: transform 0.2s ease, color 0.2s ease;
+    font-size: 2.5rem;
+    font-weight: 300;
+    color: #6c757d;
+    background: none;
+    border: none;
+    line-height: 1;
+    padding: 0;
+    transition: color 0.2s ease;
 }
 
 #cerrarModal:hover {
-    color: #b02a37;
-    transform: scale(1.2);
+    color: #343a40;
+    transform: none;
 }
 
-/* ===== Tabla ===== */
+/* === TABLA DE REPORTES === */
 #tablaReportes {
     width: 100%;
     border-collapse: collapse;
@@ -392,7 +391,7 @@ body {
 }
 
 #tablaReportes th {
-    background-color: #007bff;
+    background-color: #4f4f50;
     color: white;
 }
 
@@ -404,25 +403,154 @@ body {
     background-color: #e6f0ff;
 }
 
-/* ===== Animación de entrada ===== */
+/* === ANIMACIONES === */
 @keyframes fadeIn {
     from {
         opacity: 0;
         transform: translateY(-20px);
     }
+
     to {
         opacity: 1;
         transform: translateY(0);
     }
 }
 
-
-/* === Corrige el z-index de SweetAlert2 para que esté sobre el modal === */
 .swal2-container {
     z-index: 99999 !important;
 }
 
-/* === Asegura que el modal no bloquee los popups === */
-#modalReportes {
-    z-index: 5000 !important;
+/* === AJUSTES AL PANEL DE INCIDENTES === */
+#info-panel {
+    background-color: #fdf6e3;
+    border: 1px solid #f0e0b0;
+    color: #6c5828;
+    margin-top: 0;
+    margin-bottom: 12px;
+}
+
+
+.panel-actions-group {
+    display: flex;
+    flex-direction: column;
+    gap: 8px;
+    margin-top: 10px;
+}
+
+.panel-actions-group .btn-primary {
+    background-color: #0078ff;
+    color: #fff;
+    border: none;
+    border-radius: 6px;
+    padding: 8px 12px;
+    width: 100%;
+    font-weight: 600;
+    cursor: pointer;
+    transition: background-color 0.3s;
+}
+
+.panel-actions-group .btn-primary:hover {
+    background-color: #005fcc;
+}
+
+
+/* === ESTILOS PARA BOTONES DE PANEL=== */
+.panel-actions-group .btn-success {
+    background-color: #198754;
+    color: #fff;
+    border: none;
+    border-radius: 6px;
+    padding: 8px 12px;
+    width: 100%;
+    font-weight: 600;
+    cursor: pointer;
+    transition: background-color 0.3s, opacity 0.3s;
+}
+
+.panel-actions-group .btn-success:hover {
+    background-color: #157347;
+}
+
+.panel-actions-group button:disabled {
+    background-color: #a9a9a9;
+    cursor: not-allowed;
+    opacity: 0.7;
+}
+
+.panel-actions-group button:disabled:hover {
+    background-color: #a9a9a9;
+}
+
+
+
+/* === ESTILOS PARA BOTONES DE LA TABLA === */
+.celda-acciones {
+    display: flex;
+    flex-wrap: wrap;
+    justify-content: center;
+    align-items: center;
+    gap: 5px;
+}
+
+.btn-tabla {
+    border: none;
+    border-radius: 5px;
+    padding: 4px 8px;
+    font-size: 0.85rem;
+    font-weight: 600;
+    color: white;
+    cursor: pointer;
+    transition: transform 0.2s ease, box-shadow 0.2s ease;
+}
+
+.btn-tabla:hover {
+    transform: translateY(-1px);
+    box-shadow: 0 2px 4px rgba(0, 0, 0, 0.15);
+}
+
+.btn-ver-incidente {
+    background-color: #000000;
+}
+
+.btn-ver-incidente:hover {
+    background-color: #0069d9;
+}
+
+.btn-editar-incidente {
+    background-color: #000000;
+}
+
+.btn-editar-incidente:hover {
+    background-color: #a9ce07;
+}
+
+.btn-eliminar-incidente {
+    background-color: #0e0d0d;
+}
+
+.btn-eliminar-incidente:hover {
+    background-color: #c82333;
+}
+
+/* === AJUSTE DE POSICIÓN DE CONTROLES PERSONALIZADOS === */
+.custom-controls-wrapper {
+    margin-top: 80px;
+    display: flex;
+    flex-direction: column;
+    gap: 10px;
+}
+
+.heatmap-legend-gradient {
+    width: 100%;
+    height: 15px;
+    margin-top: 4px;
+    margin-bottom: 2px;
+    clear: both;
+    border: 1px solid #aaa;
+    border-radius: 4px;
+    background: linear-gradient(to right, yellow, orange, red);
+}
+
+.info.legend .leyenda-item {
+    margin-bottom: 8px;
 }
