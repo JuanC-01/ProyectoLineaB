@@ -63,22 +63,39 @@ const registrarIncidente = async (req, res) => {
 
 
 // 2. READ ALL: Obtener todos los incidentes (para el módulo de reportes/tabla)
+// 2. READ ALL: Obtener todos los incidentes (AHORA CON FILTRO DE FECHA)
 const obtenerIncidentes = async (req, res) => {
+  // Obtenemos la fecha desde los query params (ej: /api/incidentes?fecha=2025-10-25)
+  const { fecha } = req.query;
+
   try {
+    let params = [];
+    let whereClause = '';
+
+    // Si se proporciona una fecha, la añadimos a la consulta
+    if (fecha) {
+      params.push(fecha);
+      // Usamos DATE() en la columna timestamp para comparar solo la fecha
+      whereClause = `WHERE DATE(fecha_incidente) = $1`;
+    }
+
     const sql = `
       SELECT 
         id, nombre_accidentado, usuario_registro, fecha_incidente, 
         hospital_destino, distancia_km, tiempo_min,
         ST_AsGeoJSON(punto_incidente) AS punto_geojson
       FROM public.incidentes
+      ${whereClause} -- Se añade el filtro (si existe)
       ORDER BY fecha_incidente DESC;
     `;
-    const result = await pool.query(sql);
+    
+    // Pasamos los parámetros (si existen) a la consulta
+    const result = await pool.query(sql, params);
 
     const incidentesFormateados = result.rows.map(row => ({
       ...row,
       punto_geojson: JSON.parse(row.punto_geojson),
-      ruta_geojson: null,
+      ruta_geojson: null, // Tu lógica original
       fecha_incidente: row.fecha_incidente ? row.fecha_incidente.toLocaleString() : 'N/A'
     }));
 
@@ -88,7 +105,6 @@ const obtenerIncidentes = async (req, res) => {
     res.status(500).json({ error: 'Error al obtener el listado de incidentes.' });
   }
 };
-
 
 // 3. READ ONE: Obtener un incidente por ID
 const obtenerIncidentePorId = async (req, res) => {
@@ -184,5 +200,5 @@ module.exports = {
     obtenerIncidentes,
     obtenerIncidentePorId,
     eliminarIncidente,
-    actualizarIncidente // 👈 Exportar la nueva función
+    actualizarIncidente 
 };

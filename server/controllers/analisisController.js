@@ -1,11 +1,8 @@
 const pool = require('../config/db');
 
-// Función que busca hospitales en el buffer y calcula su distancia
 const analizarIncidente = async (req, res) => {
     try {
         const { lat, lon, distancia } = req.body;
-
-        // CONSULTA REFORZADA: Asegura la transformación de coordenadas explícitamente
         const hospitalesQuery = `
             WITH buffer AS (
                 SELECT ST_Buffer(
@@ -45,7 +42,6 @@ const analizarIncidente = async (req, res) => {
     }
 };
 
-// Esta es la función que calcula la ruta
 const calcularRuta = async (req, res) => {
     try {
         const { lat_inicio, lon_inicio, lat_fin, lon_fin } = req.body;

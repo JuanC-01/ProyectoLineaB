@@ -76,7 +76,7 @@ export const actualizarLeyenda = () => {
 };
 
 export const agregarItemLeyenda = (nombreCapa) => {
-    const geoserverBase = "http://redes2.online:8080/geoserver/wms";
+    const geoserverBase = "http://redes2.online/geoserver/wms";
 
     switch (nombreCapa) {
         case "Departamentos":
@@ -134,7 +134,7 @@ export const quitarItemLeyenda = (nombreCapa) => {
 
 // --- CAPAS WMS ---
 export const addDepartamentosLayer = (map) => {
-    const geoserverUrl = 'http://redes2.online:8080/geoserver/wms';
+    const geoserverUrl = 'http://redes2.online/geoserver/wms';
     const departamentosWMS = L.tileLayer.wms(geoserverUrl, {
         layers: 'hospitales_bogota:dv_departamento',
         format: 'image/png',
@@ -146,7 +146,7 @@ export const addDepartamentosLayer = (map) => {
 };
 
 export const addViasLayer = (map) => {
-    const geoserverUrl = 'http://redes2.online:8080/geoserver/wms';
+    const geoserverUrl = 'http://redes2.online/geoserver/wms';
     const viasWMS = L.tileLayer.wms(geoserverUrl, {
         layers: 'hospitales_bogota:malla_vial_integral_bogota_d_c',
         format: 'image/png',
@@ -159,7 +159,7 @@ export const addViasLayer = (map) => {
 
 // --- LOCALIDADES ---
 export const addLocalidadesLayer = async (map) => {
-    const wfsUrl = `http://redes2.online:8080/geoserver/hospitales_bogota/ows?service=WFS&version=1.0.0&request=GetFeature&typeName=hospitales_bogota%3Alocalidades&outputFormat=application%2Fjson`;
+    const wfsUrl = `http://redes2.online/geoserver/hospitales_bogota/ows?service=WFS&version=1.0.0&request=GetFeature&typeName=hospitales_bogota%3Alocalidades&outputFormat=application%2Fjson`;
     const [localidadesGeoJSON, conteoHospitales] = await Promise.all([
         fetch(wfsUrl).then(res => res.json()),
         fetchLocalidadesConConteo()

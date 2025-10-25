@@ -24,7 +24,7 @@ export const fetchLocalidadesConConteo = async () => {
     }
 };
 export const fetchLocalidadesParaBusqueda = async () => {
-    const wfsUrl = `http://redes2.online:8080/geoserver/hospitales_bogota/ows?service=WFS&version=1.0.0&request=GetFeature&typeName=hospitales_bogota%3Alocalidades&outputFormat=application%2Fjson`;
+    const wfsUrl = `http://redes2.online/geoserver/hospitales_bogota/ows?service=WFS&version=1.0.0&request=GetFeature&typeName=hospitales_bogota%3Alocalidades&outputFormat=application%2Fjson`;
     try {
         const response = await fetch(wfsUrl);
         if (!response.ok) throw new Error('Error al obtener localidades para búsqueda');
