@@ -6,10 +6,10 @@ const getHospitalesCercanos = async (req, res) => {
         const query = `
             SELECT
                 gid,
-                rsoentadsc, -- Nombre del hospital
-                dirsirep,   -- Dirección
-                nivel,      -- Nivel
-                njuridica,  -- Naturaleza Jurídica (Pública/Privada)
+                rsoentadsc, 
+                dirsirep,   
+                nivel,      
+                njuridica,
                 ST_AsGeoJSON(geom) AS geojson
             FROM
                 rasa -- Nombre de la tabla corregido
@@ -23,16 +23,15 @@ const getHospitalesCercanos = async (req, res) => {
 
         const result = await pool.query(query, [lon, lat, distancia]);
 
-        // Mapeamos las columnas correctas a las propiedades del GeoJSON
         const features = result.rows.map(row => {
             return {
                 type: "Feature",
                 properties: {
                     gid: row.gid,
-                    nombre: row.rsoentadsc, // La propiedad 'nombre' para el frontend
-                    direccion: row.dirsirep, // La propiedad 'direccion' para el frontend
+                    nombre: row.rsoentadsc, 
+                    direccion: row.dirsirep, 
                     nivel: row.nivel,
-                    tipo: row.njuridica,     // La propiedad 'tipo' para el frontend
+                    tipo: row.njuridica,   
                 },
                 geometry: JSON.parse(row.geojson)
             };
@@ -49,7 +48,7 @@ const getHospitalesCercanos = async (req, res) => {
 const getTodosLosHospitales = async (req, res) => {
     try {
         const query = `
-            SELECT gid, rsoentadsc, dirsirep, nivel, njuridica, ST_AsGeoJSON(geom) AS geojson
+            SELECT gid, rsoentadsc, dirsirep, nivel, njuridica, clprestado, ST_AsGeoJSON(geom) AS geojson
             FROM rasa; -- Nombre de la tabla corregido
         `;
         const result = await pool.query(query);
@@ -62,6 +61,7 @@ const getTodosLosHospitales = async (req, res) => {
                 direccion: row.dirsirep,
                 nivel: row.nivel,
                 tipo: row.njuridica,
+                prestador: row.clprestado,  
             },
             geometry: JSON.parse(row.geojson)
         }));

@@ -17,6 +17,7 @@
     "leaflet": "^1.9.4",
     "leaflet-minimap": "^3.6.1",
     "leaflet-routing-machine": "^3.2.12",
-    "leaflet.markercluster": "^1.5.3"
+    "leaflet.markercluster": "^1.5.3",
+    "sweetalert2": "^11.26.3"
   }
 }

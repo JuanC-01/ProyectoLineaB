@@ -6,18 +6,24 @@
     <link rel="icon" type="image/svg+xml" href="/vite.svg" />
     <meta name="viewport" content="width=device-width, initial-scale=1.0" />
     <title>Visor de Hospitales - Bogotá</title>
+    <!-- Vinculamos el CSS del modal -->
+    <link rel="stylesheet" href="/src/styles/reportes.css">
 </head>
 
 <body>
-<div id="search-container">
-  <div style="display:flex;gap:6px;align-items:center;">
-    <input id="search-input" placeholder="Buscar localidad o hospital..." autocomplete="off">
-    <button id="search-btn">🔍</button>
-  </div>
-  <ul id="search-suggestions"></ul>
-</div>
+    <div id="search-container">
+        <div style="display:flex;gap:6px;align-items:center;">
+            <input id="search-input" placeholder="Buscar localidad o hospital..." autocomplete="off">
+            <button id="search-btn">🔍</button>
+        </div>
+        <ul id="search-suggestions"></ul>
+    </div>
 
-
+    <div id="incident-control" class="custom-control">
+        <button id="btnRegistrar" style="background-color: #dc3545; color: white; display: none; margin-top: 10px;">
+            🚨 Registrar Incidente
+        </button>
+    </div>
 
     <div id="map"></div>
 
@@ -31,6 +37,7 @@
                             d="M12 2C6.48 2 2 6.48 2 12s4.48 10 10 10 10-4.48 10-10S17.52 2 12 2zm1 15h-2v-2h2v2zm0-4h-2V7h2v6z" />
                     </svg>
                 </a>
+
                 <div class="controles-ui" id="incident-panel">
                     <a href="#" title="Abrir panel de incidentes">
                         <img src="/accidente.png" alt="Logo incidente">
@@ -42,8 +49,39 @@
                         <input type="number" id="distancia-buffer" value="1000" min="100" step="100">
                     </div>
                     <p id="info-panel">Haz clic en el botón para iniciar.</p>
+
+                    <!-- 🧾 Nuevo botón de reportes -->
+                    <button id="btn-reportes">📋 Ver Reportes</button>
                 </div>
             </div>
+        </div>
+    </div>
+
+    <!-- 🧾 Modal de reportes -->
+    <div id="modalReportes">
+        <div id="modal-content">
+            <div id="modal-header">
+                <h2>📊 Reporte de Incidentes</h2>
+                <span id="cerrarModal">&times;</span>
+            </div>
+            <table id="tablaReportes">
+                <thead>
+                    <tr>
+                        <th>ID</th>
+                        <th>Nombre Accidentado</th>
+                        <th>Usuario</th>
+                        <th>Fecha</th>
+                        <th>Hospital</th>
+                        <th>Distancia (km)</th>
+                        <th>Tiempo (min)</th>
+                    </tr>
+                </thead>
+                <tbody>
+                    <tr>
+                        <td colspan="7">Cargando datos...</td>
+                    </tr>
+                </tbody>
+            </table>
         </div>
     </div>
 

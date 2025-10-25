@@ -16,8 +16,8 @@ const hospitalIcon = L.icon({
 });
 
 function getColor(d) {
-    return d > 40 ? '#800026' : d > 30 ? '#BD0026' : d > 20 ? '#E31A1C' :
-        d > 10 ? '#FC4E2A' : d > 5 ? '#FD8D3C' : d > 0 ? '#FEB24C' : '#FFEDA0';
+    return d > 17 ? '#800026' : d > 12 ? '#BD0026' : d > 8 ? '#E31A1C' :
+        d > 7 ? '#FC4E2A' : d > 3 ? '#FD8D3C' : d > 0 ? '#FEB24C' : '#FFEDA0';
 }
 function estiloLocalidad(feature) {
     return {
@@ -107,7 +107,7 @@ export const agregarItemLeyenda = (nombreCapa) => {
             break;
 
         case "Localidades":
-            const grades = [0, 5, 10, 20, 30, 40];
+            const grades = [0, 3, 7, 8, 12, 17];
             let labels = `<strong>Nº de Hospitales<br>en Localidades</strong>`;
             for (let i = 0; i < grades.length; i++) {
                 labels += `<br><i style="background:${getColor(grades[i] + 1)}"></i> 
@@ -205,7 +205,19 @@ export const addHospitalesClusterLayer = async (map) => {
             pointToLayer: (feature, latlng) => L.marker(latlng, { icon: hospitalIcon }),
             onEachFeature: (feature, layer) => {
                 const props = feature.properties;
-                const popupContent = `<b>${props.nombre}</b><br><hr><strong>Dirección:</strong> ${props.direccion || 'No disponible'}<br><strong>Nivel:</strong> ${props.nivel || 'No disponible'}<br><strong>Tipo:</strong> ${props.tipo || 'No disponible'}`;
+
+                // --- CÓDIGO MODIFICADO CON TU RUTA ---
+                const popupContent = `
+                    <b>${props.nombre}</b><br>  
+                    <img src="/hospital.jpg" alt="Hospital" style="width:100%; max-height:150px; object-fit:cover; margin-top:5px; border-radius: 4px;">
+                 <hr>
+                    <strong>Dirección:</strong> ${props.direccion || 'No disponible'}<br>
+                    <strong>Nivel:</strong> ${props.nivel || 'No disponible'}<br>
+                    <strong>Tipo:</strong> ${props.tipo || 'No disponible'}<br>
+                    <strong>Prestador:</strong> ${props.prestador || 'No disponible'}
+`;
+                // --- FIN DE LA MODIFICACIÓN ---
+
                 layer.bindPopup(popupContent);
             }
         });
@@ -249,10 +261,11 @@ export const dibujarResultados = (map, latlng, data) => {
                     <strong>Tipo:</strong> ${props.tipo || 'No disponible'}<hr>
                     <strong>Distancia aprox.:</strong> ${distanciaKm.toFixed(2)} km<br>
                     <strong>Tiempo estimado:</strong> ${tiempoMin} min<br><br>
-                    <button class="btn-ruta" 
-                        data-lat="${coords[1]}" 
-                        data-lon="${coords[0]}">
-                        🚗 Calcular ruta óptima
+                   <button class="btn-ruta" 
+                    data-lat="${coords[1]}" 
+                    data-lon="${coords[0]}"
+                    data-name="${props.nombre}">
+                    🚗 Calcular ruta óptima
                     </button>
                 `;
 

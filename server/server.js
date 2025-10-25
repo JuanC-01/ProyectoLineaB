@@ -13,6 +13,7 @@ const poligonosRoutes = require('./routes/poligonosRoutes');
 const hospitalesRoutes = require('./routes/hospitalesRoutes');
 const localidadesRoutes = require('./routes/localidadesRoutes');
 const analisisRouters = require('./routes/analisisRoutes');
+const incidentesRoutes = require('./routes/incidentesRoutes');
 
 // rutas 
 app.use('/api/lineas', lineasRoutes);
@@ -21,6 +22,7 @@ app.use('/api/poligonos', poligonosRoutes);
 app.use('/api/hospitales', hospitalesRoutes);
 app.use('/api/localidades', localidadesRoutes);
 app.use('/api/analisis', analisisRouters); 
+app.use('/api', incidentesRoutes);
 
 const PORT = process.env.PORT || 3000;
 app.listen(PORT, () => {
