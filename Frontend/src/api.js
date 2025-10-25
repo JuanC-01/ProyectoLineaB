@@ -1,4 +1,4 @@
-const API_URL = 'https://backend-32r7-m7k20bbyv-juancs-projects-303f179d.vercel.app/api';
+const API_URL = 'https://backend-32r7.vercel.app/api';
 
 export const fetchTodosLosHospitales = async () => {
     const url = `${API_URL}/hospitales/todos`;
