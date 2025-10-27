@@ -1,6 +1,8 @@
-const API_URL = import.meta.env.VITE_API_URL || 'http://localhost:5000/api';
+const API_URL =  'http://localhost:5000/api';
 
-
+/*
+import.meta.env.VITE_API_URL ||
+*/
 export const fetchTodosLosHospitales = async () => {
     const url = `${API_URL}/hospitales/todos`;
     try {
@@ -135,5 +137,52 @@ export const fetchActualizarIncidente = async (id, data) => {
     } catch (error) {
         console.error("Error de red/API al actualizar incidente:", error.message);
         return { error: error.message };
+    }
+};
+
+export const fetchAnalisisPorPoligono = async (geometry) => {
+    const url = `${API_URL}/analisis/poligono`;
+    try {
+        const response = await fetch(url, {
+            method: 'POST',
+            headers: { 'Content-Type': 'application/json' },
+            body: JSON.stringify({ geometry })
+        });
+        if (!response.ok) throw new Error('Error al realizar el análisis por polígono');
+        return await response.json();
+    } catch (error) {
+        console.error('Error en fetchAnalisisPorPoligono:', error.message);
+        return null;
+    }
+};
+
+/**
+ * 🔄 Actualizar hospital (nombre, ubicación o ambos)
+ * @param {Object} data - { id, nombre?, lat?, lon? }
+ */
+export const fetchActualizarHospital = async (data) => {
+    const url = `${API_URL}/hospitales/editar`;
+    try {
+        const response = await fetch(url, {
+            method: 'PUT',
+            headers: { 'Content-Type': 'application/json' },
+            body: JSON.stringify(data)
+        });
+
+        if (!response.ok) {
+            let errorMsg = 'Error al actualizar hospital.';
+            try {
+                const errorData = await response.json();
+                errorMsg = errorData.message || errorMsg;
+            } catch {
+                errorMsg = `Error HTTP ${response.status}: ${response.statusText}`;
+            }
+            return { error: errorMsg };
+        }
+
+        return await response.json();
+    } catch (error) {
+        console.error("Error de red/API al actualizar hospital:", error.message);
+        return { error: 'Error de conexión: No se pudo actualizar el hospital.' };
     }
 };

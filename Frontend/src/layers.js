@@ -182,44 +182,56 @@ export const addLocalidadesLayer = async (map) => {
     return localidadesLayer;
 };
 
+let modoEdicionActivo = false;
+
 // --- HOSPITALES ---
 export const addHospitalesClusterLayer = async (map) => {
-    hospitalesClusterLayer = L.markerClusterGroup({
-        iconCreateFunction: (cluster) => {
-            const childCount = cluster.getChildCount();
-            let cssClass = '';
-            if (childCount < 10) cssClass = 'hospital-cluster-small';
-            else if (childCount < 100) cssClass = 'hospital-cluster-medium';
-            else cssClass = 'hospital-cluster-large';
-            return L.divIcon({
-                html: `<div><span>${childCount}</span></div>`,
-                className: `hospital-cluster ${cssClass}`,
-                iconSize: L.point(40, 40)
-            });
-        }
+  hospitalesClusterLayer = L.markerClusterGroup({
+    iconCreateFunction: (cluster) => {
+      const childCount = cluster.getChildCount();
+      let cssClass = "";
+      if (childCount < 10) cssClass = "hospital-cluster-small";
+      else if (childCount < 100) cssClass = "hospital-cluster-medium";
+      else cssClass = "hospital-cluster-large";
+
+      return L.divIcon({
+        html: `<div><span>${childCount}</span></div>`,
+        className: `hospital-cluster ${cssClass}`,
+        iconSize: L.point(40, 40),
+      });
+    },
+  });
+
+  const todosLosHospitales = await fetchTodosLosHospitales();
+
+  if (todosLosHospitales) {
+    const geoJsonLayer = L.geoJSON(todosLosHospitales, {
+      pointToLayer: (feature, latlng) => {
+        const marker = L.marker(latlng, { icon: hospitalIcon });
+        marker.feature = feature; // Guardar propiedades
+        return marker;
+      },
+      onEachFeature: (feature, layer) => {
+        const props = feature.properties;
+        const popupContent = `
+          <b>${props.nombre}</b><br>  
+          <img src="/hospital.jpg" alt="Hospital" 
+               style="width:100%; max-height:150px; object-fit:cover; margin-top:5px; border-radius: 4px;">
+          <hr>
+          <strong>Dirección:</strong> ${props.direccion || "No disponible"}<br>
+          <strong>Nivel:</strong> ${props.nivel || "No disponible"}<br>
+          <strong>Tipo:</strong> ${props.tipo || "No disponible"}<br>
+          <strong>Prestador:</strong> ${props.prestador || "No disponible"}
+        `;
+        layer.bindPopup(popupContent);
+      },
     });
 
-    const todosLosHospitales = await fetchTodosLosHospitales();
-    if (todosLosHospitales) {
-        const geoJsonLayer = L.geoJSON(todosLosHospitales, {
-            pointToLayer: (feature, latlng) => L.marker(latlng, { icon: hospitalIcon }),
-            onEachFeature: (feature, layer) => {
-                const props = feature.properties;
-                const popupContent = `
-                    <b>${props.nombre}</b><br>  
-                    <img src="/hospital.jpg" alt="Hospital" style="width:100%; max-height:150px; object-fit:cover; margin-top:5px; border-radius: 4px;">
-                 <hr>
-                    <strong>Dirección:</strong> ${props.direccion || 'No disponible'}<br>
-                    <strong>Nivel:</strong> ${props.nivel || 'No disponible'}<br>
-                    <strong>Tipo:</strong> ${props.tipo || 'No disponible'}<br>
-                    <strong>Prestador:</strong> ${props.prestador || 'No disponible'}
-                `;
-                layer.bindPopup(popupContent);
-            }
-        });
-        hospitalesClusterLayer.addLayer(geoJsonLayer);
-    }
-    return hospitalesClusterLayer;
+    hospitalesClusterLayer.addLayer(geoJsonLayer);
+  }
+
+  map.addLayer(hospitalesClusterLayer);
+  return hospitalesClusterLayer;
 };
 
 // --- DIBUJAR RESULTADOS ---

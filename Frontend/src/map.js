@@ -3,6 +3,10 @@ import 'leaflet/dist/leaflet.css';
 import 'leaflet-minimap/dist/Control.MiniMap.min.css';
 import MiniMap from 'leaflet-minimap';
 
+// 🟣 Importar Leaflet-Geoman
+import '@geoman-io/leaflet-geoman-free';
+import '@geoman-io/leaflet-geoman-free/dist/leaflet-geoman.css';
+
 let map;
 
 export const initMap = () => {
@@ -10,40 +14,48 @@ export const initMap = () => {
 
   // === CAPAS BASE ===
   const osmBase = L.tileLayer('https://{s}.tile.openstreetmap.org/{z}/{x}/{y}.png', {
-    attribution: '&copy; <a href="https://www.openstreetmap.org/copyright">OpenStreetMap</a>'
+    attribution:
+      '&copy; <a href="https://www.openstreetmap.org/copyright">OpenStreetMap</a>',
   });
+
   const openTopoMap = L.tileLayer('https://{s}.tile.opentopomap.org/{z}/{x}/{y}.png', {
     maxZoom: 17,
-    attribution: 'Map data: &copy; <a href="https://www.openstreetmap.org/copyright">OpenStreetMap</a>, <a href="http://viewfinderpanoramas.org">SRTM</a> | Map style: &copy; <a href="https://opentopomap.org">OpenTopoMap</a>'
+    attribution:
+      'Map data: &copy; <a href="https://www.openstreetmap.org/copyright">OpenStreetMap</a>, ' +
+      '<a href="http://viewfinderpanoramas.org">SRTM</a> | ' +
+      'Map style: &copy; <a href="https://opentopomap.org">OpenTopoMap</a>',
   });
-  const esriWorldImagery = L.tileLayer('https://server.arcgisonline.com/ArcGIS/rest/services/World_Imagery/MapServer/tile/{z}/{y}/{x}', {
-    attribution: 'Tiles &copy; Esri'
-  });
+
+  const esriWorldImagery = L.tileLayer(
+    'https://server.arcgisonline.com/ArcGIS/rest/services/World_Imagery/MapServer/tile/{z}/{y}/{x}',
+    { attribution: 'Tiles &copy; Esri' }
+  );
 
   osmBase.addTo(map);
 
   const baseMaps = {
-    "Normal": osmBase,
-    "Relieve": openTopoMap,
-    "Satélite": esriWorldImagery
+    Normal: osmBase,
+    Relieve: openTopoMap,
+    Satélite: esriWorldImagery,
   };
 
   // === ESCALA ===
   L.control.scale({ imperial: false }).addTo(map);
 
   // === MINIMAP ===
-  let minimapLayer = L.tileLayer('https://{s}.basemaps.cartocdn.com/light_nolabels/{z}/{x}/{y}{r}.png', {
-    attribution: '&copy; <a href="https://carto.com/attributions">CARTO</a>'
-  });
+  let minimapLayer = L.tileLayer(
+    'https://{s}.basemaps.cartocdn.com/light_nolabels/{z}/{x}/{y}{r}.png',
+    { attribution: '&copy; <a href="https://carto.com/attributions">CARTO</a>' }
+  );
 
   const miniMap = new L.Control.MiniMap(minimapLayer, {
     toggleDisplay: true,
     minimized: false,
     position: 'bottomleft',
-    zoomLevelOffset: -4
+    zoomLevelOffset: -4,
   }).addTo(map);
 
-  //ACTUALIZAR MINIMAPA
+  // === ACTUALIZAR MINIMAPA ===
   map.on('baselayerchange', (e) => {
     try {
       if (miniMap && miniMap._miniMap) {
@@ -56,6 +68,23 @@ export const initMap = () => {
     } catch (err) {
       console.warn('Error actualizando minimapa:', err);
     }
+  });
+
+  // 🟢 SOLO DIBUJAR POLÍGONOS (sin rotar ni editar)
+  map.pm.addControls({
+    position: 'topleft',
+    drawPolygon: true,
+    drawMarker: false,
+    drawPolyline: false,
+    drawCircle: false,
+    drawRectangle: false,
+    drawCircleMarker: false,
+    drawText: false,
+    cutPolygon: false,
+    editMode: false,
+    dragMode: false,
+    removalMode: false,
+    rotateMode: false,
   });
 
   return { map, baseMaps };

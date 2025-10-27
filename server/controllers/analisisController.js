@@ -83,4 +83,52 @@ const calcularRuta = async (req, res) => {
     }
 };
 
-module.exports = { analizarIncidente, calcularRuta };
+const analisisPorPoligono = async (req, res) => {
+    const { geometry } = req.body; 
+
+    if (!geometry || !geometry.type || !geometry.coordinates) {
+        return res.status(400).json({ error: 'Geometría del polígono inválida o faltante.' });
+    }
+    if (geometry.type !== 'Polygon') {
+         return res.status(400).json({ error: 'La geometría debe ser de tipo Polígono.' });
+    }
+
+    const geometryGeoJSONString = JSON.stringify(geometry);
+
+    const query = `
+        SELECT
+            h.rsoentadsc AS nombre, -- Asume columna 'nombre' en hospitales
+            'Hospital' AS tipo,
+            loc.locnombre AS localidad -- Asume columna 'locnombre' en localidades
+        FROM
+            rasa h,        -- Nombre de tu tabla de hospitales
+            loca loc      -- Nombre de tu tabla de localidades
+        WHERE
+            ST_Within(h.geom, ST_SetSRID(ST_GeomFromGeoJSON($1), 4326)) -- Asume columna 'geom' en hospitales
+            AND ST_Within(h.geom, loc.geom)                             -- Asume columna 'geom' en localidades
+
+        UNION ALL
+
+        SELECT
+            i.nombre_accidentado AS nombre, -- Asume columna 'nombre_accidentado' en incidentes
+            'Accidente' AS tipo,
+            loc.locnombre AS localidad      -- Asume columna 'locnombre' en localidades
+        FROM
+            incidentes i,        -- Nombre de tu tabla de incidentes
+            loca loc      -- Nombre de tu tabla de localidades
+        WHERE
+            ST_Within(i.punto_incidente, ST_SetSRID(ST_GeomFromGeoJSON($1), 4326))
+            AND ST_Within(i.punto_incidente, loc.geom);                          -- Asume columna 'geom' en localidades
+    `;
+
+    try {
+        const { rows } = await pool.query(query, [geometryGeoJSONString]);
+        res.json(rows); 
+    } catch (error) {
+        console.error('Error en la consulta de análisis por polígono:', error);
+        res.status(500).json({ error: 'Error al realizar el análisis espacial en el servidor.' }); 
+    }
+};
+
+
+module.exports = { analizarIncidente, calcularRuta, analisisPorPoligono };

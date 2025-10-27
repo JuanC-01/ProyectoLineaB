@@ -9,9 +9,9 @@ import shadowUrl from 'leaflet/dist/images/marker-shadow.png';
 delete L.Icon.Default.prototype._getIconUrl;
 
 L.Icon.Default.mergeOptions({
-  iconRetinaUrl,
-  iconUrl,
-  shadowUrl,
+    iconRetinaUrl,
+    iconUrl,
+    shadowUrl,
 });
 // ==========================================================
 
@@ -26,18 +26,19 @@ import * as turf from '@turf/turf';
 import Swal from 'sweetalert2';
 import { initMap } from './map.js';
 import {
-  fetchAnalisisIncidente, fetchRutaOptima, fetchTodosLosHospitales,
-  fetchLocalidadesConConteo, fetchLocalidadesParaBusqueda,
-  registrarNuevoIncidente, fetchObtenerIncidentes, fetchEliminarIncidente, fetchActualizarIncidente
+    fetchAnalisisIncidente, fetchRutaOptima, fetchTodosLosHospitales,
+    fetchLocalidadesConConteo, fetchLocalidadesParaBusqueda,
+    registrarNuevoIncidente, fetchObtenerIncidentes, fetchEliminarIncidente, fetchActualizarIncidente, fetchAnalisisPorPoligono
 } from './api.js';
 import {
-  addDepartamentosLayer, addViasLayer, addLocalidadesLayer, addHospitalesClusterLayer,
-  dibujarResultados, dibujarRuta, inicializarLeyenda, agregarItemLeyenda, quitarItemLeyenda, addHeatmapLayer
+    addDepartamentosLayer, addViasLayer, addLocalidadesLayer, addHospitalesClusterLayer,
+    dibujarResultados, dibujarRuta, inicializarLeyenda, agregarItemLeyenda, quitarItemLeyenda, addHeatmapLayer
 } from './layers.js';
 
 let capaRutaReporte = L.layerGroup();
 let capaPuntoReporte = L.layerGroup();
 let map;
+
 
 // =======================================================
 // LÓGICA DEL MODAL DE REPORTES
@@ -102,7 +103,7 @@ const editarIncidente = async (incidente) => {
                 `Incidente #${incidente.id} ha sido modificado.`,
                 'success'
             );
-            cargarReportes(); 
+            cargarReportes();
         } else {
             Swal.fire('Error', result.error || 'No se pudo actualizar el incidente.', 'error');
         }
@@ -127,7 +128,7 @@ const eliminarIncidente = async (id) => {
 
         if (result && !result.error) {
             Swal.fire('¡Eliminado!', `El Incidente #${id} ha sido eliminado.`, 'success');
-            cargarReportes(); 
+            cargarReportes();
             capaRutaReporte.clearLayers();
             capaPuntoReporte.clearLayers();
         } else {
@@ -139,7 +140,7 @@ const eliminarIncidente = async (id) => {
 // Función para cargar los datos en la tabla del modal
 const cargarReportes = async () => {
     const tbody = document.querySelector('#tablaReportes tbody');
-    tbody.innerHTML = '<tr><td colspan="8">Cargando datos...</td></tr>'; 
+    tbody.innerHTML = '<tr><td colspan="8">Cargando datos...</td></tr>';
     if (!map.hasLayer(capaRutaReporte)) capaRutaReporte.addTo(map);
     if (!map.hasLayer(capaPuntoReporte)) capaPuntoReporte.addTo(map);
 
@@ -155,7 +156,7 @@ const cargarReportes = async () => {
         return;
     }
 
-    tbody.innerHTML = ''; 
+    tbody.innerHTML = '';
     data.forEach(incidente => {
         const row = tbody.insertRow();
         row.insertCell().textContent = incidente.id;
@@ -167,17 +168,17 @@ const cargarReportes = async () => {
         row.insertCell().textContent = incidente.tiempo_min;
 
         const actionsCell = row.insertCell();
-        actionsCell.className = 'celda-acciones'; 
+        actionsCell.className = 'celda-acciones';
 
         const btnVer = document.createElement('button');
         btnVer.textContent = 'Ver';
-        btnVer.className = 'btn-tabla btn-ver-incidente'; 
+        btnVer.className = 'btn-tabla btn-ver-incidente';
         btnVer.onclick = () => verIncidenteEnMapa(incidente);
         actionsCell.appendChild(btnVer);
 
         const btnEditar = document.createElement('button');
         btnEditar.textContent = 'Editar';
-        btnEditar.className = 'btn-tabla btn-editar-incidente'; 
+        btnEditar.className = 'btn-tabla btn-editar-incidente';
         btnEditar.onclick = () => editarIncidente(incidente);
         actionsCell.appendChild(btnEditar);
 
@@ -193,7 +194,7 @@ const cargarReportes = async () => {
 // =======================================================
 document.addEventListener('DOMContentLoaded', async () => {
     const mapObject = initMap();
-    map = mapObject.map; 
+    map = mapObject.map;
     const baseMaps = mapObject.baseMaps;
 
     let capaBaseInicial = null;
@@ -215,6 +216,8 @@ document.addEventListener('DOMContentLoaded', async () => {
     const viasCapa = addViasLayer(map);
     const localidadesCapa = await addLocalidadesLayer(map);
     const hospitalesCapa = await addHospitalesClusterLayer(map);
+    const btnModoEdicion = document.getElementById('btn-modo-edicion');
+
     const heatLayer = await addHeatmapLayer();
     localidadesCapa.addTo(map);
     hospitalesCapa.addTo(map);
@@ -226,10 +229,10 @@ document.addEventListener('DOMContentLoaded', async () => {
         "Localidades": localidadesCapa,
         "Hospitales": hospitalesCapa,
         "Mapa de Calor": heatLayer
-        
+
     };
     L.control.layers(baseMaps, overlayMaps).addTo(map);
-  
+
     map.on('overlayadd', e => agregarItemLeyenda(e.name));
     map.on('overlayremove', e => quitarItemLeyenda(e.name));
     // =======================================================
@@ -238,7 +241,7 @@ document.addEventListener('DOMContentLoaded', async () => {
     let incidenteActual = null;
     const btnRegistrar = document.getElementById('btnRegistrar');
     if (btnRegistrar) {
-        btnRegistrar.style.display = 'none'; 
+        btnRegistrar.style.display = 'none';
     }
 
     const mostrarFormularioRegistro = async () => {
@@ -325,7 +328,7 @@ document.addEventListener('DOMContentLoaded', async () => {
         incidenteActual = null;
         if (btnRegistrar) { btnRegistrar.style.display = 'none'; }
         bufferLayer.clearLayers();
-        capaRutaReporte.clearLayers(); 
+        capaRutaReporte.clearLayers();
         capaPuntoReporte.clearLayers();
 
         map.pm.enableDraw('Marker', {
@@ -359,10 +362,14 @@ document.addEventListener('DOMContentLoaded', async () => {
     };
 
     map.on('pm:create', (e) => {
+        // 👇 Solo ejecutar si se está dibujando un marcador (punto)
+        if (e.shape !== 'Marker') return;
+
         puntoIncidente = e.layer.getLatLng();
         map.pm.disableDraw();
         ejecutarAnalisis();
     });
+
     bufferInput.addEventListener('keydown', (e) => { if (e.key === 'Enter') ejecutarAnalisis(); });
     // CÁLCULO DE RUTA Y REGISTRO
     map.on('popupopen', (e) => {
@@ -410,51 +417,171 @@ document.addEventListener('DOMContentLoaded', async () => {
         }
     });
 
-// =======================================================
-// LÓGICA DEL MODAL DE REPORTES (CON FILTROS)
-// =======================================================
-const modalReportes = document.getElementById('modalReportes');
-const btnReportes = document.getElementById('btn-reportes');
-const cerrarModal = document.getElementById('cerrarModal');
-const inputFecha = document.getElementById('filtro-fecha');
-const btnFiltrar = document.getElementById('btn-filtrar-fecha');
-const btnLimpiarFiltro = document.getElementById('btn-limpiar-filtro');
+    // =======================================================
+    // ANÁLISIS ESPACIAL POR POLÍGONO (Hospitales + Accidentes)
+    // =======================================================
+    let capaAnalisisPoligono = L.layerGroup().addTo(map);
 
+    const modalAnalisis = document.getElementById('modalAnalisis');
+    const btnAnalisisPoligono = document.getElementById('btn-analisis-poligono');
+    const cerrarModalAnalisis = document.getElementById('cerrarModalAnalisis');
 
-if (btnReportes) {
-    btnReportes.onclick = () => {
-        modalReportes.style.display = 'flex'; 
-        inputFecha.value = ''; 
-        cargarReportes(); 
-    };
-}
-
-if (cerrarModal) {
-    cerrarModal.onclick = () => {
-        modalReportes.style.display = 'none';
-    };
-}
-window.onclick = (event) => {
-    if (event.target == modalReportes) {
-        modalReportes.style.display = 'none';
+    if (btnAnalisisPoligono) {
+        btnAnalisisPoligono.onclick = () => {
+            Swal.fire({
+                title: 'Dibuja un polígono 📐',
+                text: 'Usa el mouse para delimitar el área que deseas analizar.',
+                icon: 'info',
+                confirmButtonText: 'Entendido'
+            }).then(() => {
+                // Activar modo dibujo
+                map.pm.enableDraw('Polygon', {
+                    finishOn: 'dblclick',
+                    allowSelfIntersection: false,
+                    shapeOptions: { color: 'purple', weight: 3, fillOpacity: 0.1 }
+                });
+            });
+        };
     }
-};
-if (btnFiltrar) {
-    btnFiltrar.onclick = () => {
-        const fecha = inputFecha.value;
-        if (fecha) {
-            cargarReportes(fecha); 
-        } else {
-            Swal.fire('Atención', 'Por favor, selecciona una fecha para filtrar.', 'info');
+
+    map.on('pm:create', async (e) => {
+        if (e.shape !== 'Polygon') return;
+
+        capaAnalisisPoligono.clearLayers();
+
+        const polygonLayer = e.layer.addTo(capaAnalisisPoligono);
+        map.pm.disableDraw();
+
+        const geometry = polygonLayer.toGeoJSON().geometry;
+
+        Swal.fire({
+            title: 'Analizando área...',
+            text: 'Buscando hospitales y accidentes dentro del polígono.',
+            allowOutsideClick: false,
+            didOpen: () => Swal.showLoading()
+        });
+
+        const resultados = await fetchAnalisisPorPoligono(geometry);
+        Swal.close();
+
+        if (!resultados || resultados.length === 0) {
+            Swal.fire('Sin resultados', 'No hay hospitales ni accidentes en el área seleccionada.', 'info');
+            return;
+        }
+
+        // Agregar marcadores al mapa
+        resultados.forEach(item => {
+            if (!item.lat || !item.lon || isNaN(item.lat) || isNaN(item.lon)) return;
+
+            const color = item.tipo === 'Hospital' ? 'green' : 'red';
+            L.circleMarker([item.lat, item.lon], {
+                color,
+                radius: 8,
+                fillOpacity: 0.8
+            })
+                .bindPopup(`<b>${item.tipo}</b><br>${item.nombre}<br>Localidad: ${item.localidad}`)
+                .addTo(capaAnalisisPoligono);
+        });
+
+        // Clasificar resultados
+        const hospitales = resultados.filter(r => r.tipo === 'Hospital');
+        const incidentes = resultados.filter(r => r.tipo === 'Accidente');
+        const localidades = [...new Set(resultados.map(r => r.localidad))];
+
+        // Mostrar totales en el resumen
+        document.getElementById('totalHospitales').textContent = hospitales.length;
+        document.getElementById('totalIncidentes').textContent = incidentes.length;
+        document.getElementById('totalLocalidades').textContent = localidades.length;
+
+        // Referencias a las tablas
+        const tablaHosp = document.getElementById('tablaHospitales');
+        const tablaInc = document.getElementById('tablaIncidentes');
+
+        // Llenar tabla de hospitales
+        tablaHosp.innerHTML = hospitales.length
+            ? hospitales.map(h => `
+            <tr>
+                <td>${h.nombre}</td>
+                <td>${h.localidad}</td>
+            </tr>
+          `).join('')
+            : `<tr><td colspan="2">Sin datos</td></tr>`;
+
+        // Llenar tabla de incidentes
+        tablaInc.innerHTML = incidentes.length
+            ? incidentes.map(i => `
+            <tr>
+                <td>${i.nombre}</td>
+                <td>${i.localidad}</td>
+            </tr>
+          `).join('')
+            : `<tr><td colspan="2">Sin datos</td></tr>`;
+
+        // Mostrar el modal con resultados
+        modalAnalisis.style.display = 'flex';
+    });
+
+    // 🔹 Cerrar el modal
+    if (cerrarModalAnalisis) {
+        cerrarModalAnalisis.addEventListener('click', () => {
+            modalAnalisis.style.display = 'none';
+        });
+    }
+
+    // 🔹 Cerrar si el usuario hace clic fuera del contenido
+    window.addEventListener('click', (e) => {
+        if (e.target === modalAnalisis) {
+            modalAnalisis.style.display = 'none';
+        }
+    });
+
+
+
+    // =======================================================
+    // LÓGICA DEL MODAL DE REPORTES (CON FILTROS)
+    // =======================================================
+    const modalReportes = document.getElementById('modalReportes');
+    const btnReportes = document.getElementById('btn-reportes');
+    const cerrarModal = document.getElementById('cerrarModal');
+    const inputFecha = document.getElementById('filtro-fecha');
+    const btnFiltrar = document.getElementById('btn-filtrar-fecha');
+    const btnLimpiarFiltro = document.getElementById('btn-limpiar-filtro');
+
+
+    if (btnReportes) {
+        btnReportes.onclick = () => {
+            modalReportes.style.display = 'flex';
+            inputFecha.value = '';
+            cargarReportes();
+        };
+    }
+
+    if (cerrarModal) {
+        cerrarModal.onclick = () => {
+            modalReportes.style.display = 'none';
+        };
+    }
+    window.onclick = (event) => {
+        if (event.target == modalReportes) {
+            modalReportes.style.display = 'none';
         }
     };
-}
-if (btnLimpiarFiltro) {
-    btnLimpiarFiltro.onclick = () => {
-        inputFecha.value = ''; 
-        cargarReportes();
-    };
-}
+    if (btnFiltrar) {
+        btnFiltrar.onclick = () => {
+            const fecha = inputFecha.value;
+            if (fecha) {
+                cargarReportes(fecha);
+            } else {
+                Swal.fire('Atención', 'Por favor, selecciona una fecha para filtrar.', 'info');
+            }
+        };
+    }
+    if (btnLimpiarFiltro) {
+        btnLimpiarFiltro.onclick = () => {
+            inputFecha.value = '';
+            cargarReportes();
+        };
+    }
     // =======================================================
     // BUSCADOR DE LOCALIDADES Y HOSPITALES
     // =======================================================
