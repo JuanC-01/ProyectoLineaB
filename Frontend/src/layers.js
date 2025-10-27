@@ -1,7 +1,8 @@
 import L from 'leaflet';
 import 'leaflet.heat';
 import * as turf from '@turf/turf';
-import { fetchTodosLosHospitales, fetchLocalidadesConConteo, fetchObtenerIncidentes } from './api.js';
+import { fetchTodosLosHospitales, fetchLocalidadesConConteo, fetchObtenerIncidentes, fetchActualizarIncidente, 
+    fetchEliminarIncidente } from './api.js';
 const resultadosLayer = L.featureGroup();
 const rutaLayer = L.layerGroup();
 let hospitalesClusterLayer;
@@ -9,6 +10,13 @@ let leyendaControl;
 
 const hospitalIcon = L.icon({
     iconUrl: '/hospital.png',
+    iconSize: [32, 32],
+    iconAnchor: [16, 32],
+    popupAnchor: [0, -32]
+});
+
+const incidenteIcon = L.icon({
+    iconUrl: '/accidente.png',
     iconSize: [32, 32],
     iconAnchor: [16, 32],
     popupAnchor: [0, -32]
@@ -122,6 +130,12 @@ export const agregarItemLeyenda = (nombreCapa) => {
                 <span style="float: right; font-size: 11px;">Alta</span>
         </div>`;
             break;
+        case "Incidentes": // Asegúrate que este nombre coincida con el de tu control de capas
+            leyendaItems[nombreCapa] = `
+        <div class="leyenda-item">
+            <img src="/accidente.png" height="20" width="20"> Incidentes
+        </div>`;
+            break;
     }
     actualizarLeyenda();
 };
@@ -186,34 +200,34 @@ let modoEdicionActivo = false;
 
 // --- HOSPITALES ---
 export const addHospitalesClusterLayer = async (map) => {
-  hospitalesClusterLayer = L.markerClusterGroup({
-    iconCreateFunction: (cluster) => {
-      const childCount = cluster.getChildCount();
-      let cssClass = "";
-      if (childCount < 10) cssClass = "hospital-cluster-small";
-      else if (childCount < 100) cssClass = "hospital-cluster-medium";
-      else cssClass = "hospital-cluster-large";
+    hospitalesClusterLayer = L.markerClusterGroup({
+        iconCreateFunction: (cluster) => {
+            const childCount = cluster.getChildCount();
+            let cssClass = "";
+            if (childCount < 10) cssClass = "hospital-cluster-small";
+            else if (childCount < 100) cssClass = "hospital-cluster-medium";
+            else cssClass = "hospital-cluster-large";
 
-      return L.divIcon({
-        html: `<div><span>${childCount}</span></div>`,
-        className: `hospital-cluster ${cssClass}`,
-        iconSize: L.point(40, 40),
-      });
-    },
-  });
+            return L.divIcon({
+                html: `<div><span>${childCount}</span></div>`,
+                className: `hospital-cluster ${cssClass}`,
+                iconSize: L.point(40, 40),
+            });
+        },
+    });
 
-  const todosLosHospitales = await fetchTodosLosHospitales();
+    const todosLosHospitales = await fetchTodosLosHospitales();
 
-  if (todosLosHospitales) {
-    const geoJsonLayer = L.geoJSON(todosLosHospitales, {
-      pointToLayer: (feature, latlng) => {
-        const marker = L.marker(latlng, { icon: hospitalIcon });
-        marker.feature = feature; // Guardar propiedades
-        return marker;
-      },
-      onEachFeature: (feature, layer) => {
-        const props = feature.properties;
-        const popupContent = `
+    if (todosLosHospitales) {
+        const geoJsonLayer = L.geoJSON(todosLosHospitales, {
+            pointToLayer: (feature, latlng) => {
+                const marker = L.marker(latlng, { icon: hospitalIcon });
+                marker.feature = feature; // Guardar propiedades
+                return marker;
+            },
+            onEachFeature: (feature, layer) => {
+                const props = feature.properties;
+                const popupContent = `
           <b>${props.nombre}</b><br>  
           <img src="/hospital.jpg" alt="Hospital" 
                style="width:100%; max-height:150px; object-fit:cover; margin-top:5px; border-radius: 4px;">
@@ -222,16 +236,83 @@ export const addHospitalesClusterLayer = async (map) => {
           <strong>Nivel:</strong> ${props.nivel || "No disponible"}<br>
           <strong>Tipo:</strong> ${props.tipo || "No disponible"}<br>
           <strong>Prestador:</strong> ${props.prestador || "No disponible"}
+          
         `;
-        layer.bindPopup(popupContent);
-      },
+                layer.bindPopup(popupContent);
+            },
+        });
+
+        hospitalesClusterLayer.addLayer(geoJsonLayer);
+    }
+
+    map.addLayer(hospitalesClusterLayer);
+    return hospitalesClusterLayer;
+};
+
+//Incidentes
+export const addIncidentesClusterLayer = async (map) => {
+    const incidentesClusterLayer = L.markerClusterGroup({
+
+        // --- AÑADIDO: Estilos de clúster personalizados para incidentes ---
+        iconCreateFunction: (cluster) => {
+            const childCount = cluster.getChildCount();
+            let cssClass = "";
+
+            // Usamos nombres de clases diferentes a los de hospitales
+            if (childCount < 10) cssClass = "incidente-cluster-small";
+            else if (childCount < 100) cssClass = "incidente-cluster-medium";
+            else cssClass = "incidente-cluster-large";
+
+            return L.divIcon({
+                html: `<div><span>${childCount}</span></div>`,
+                className: `incidente-cluster ${cssClass}`, // Clase base 'incidente-cluster'
+                iconSize: L.point(40, 40),
+            });
+        },
+        // --- FIN DE LA ADICIÓN ---
+
     });
+    const data = await fetchObtenerIncidentes();
 
-    hospitalesClusterLayer.addLayer(geoJsonLayer);
-  }
+    if (data && !data.error && Array.isArray(data)) {
+        const incidentesFeatures = data
+            .filter(incidente => incidente.punto_geojson && incidente.punto_geojson.coordinates)
+            .map(incidente => {
+                const coords = incidente.punto_geojson.coordinates;
+                return {
+                    type: "Feature",
+                    geometry: {
+                        type: "Point",
+                        coordinates: coords
+                    },
+                    properties: incidente
+                };
+            });
+        const geoJsonLayer = L.geoJSON(incidentesFeatures, {
+            pointToLayer: (feature, latlng) => {
+                const marker = L.marker(latlng, { icon: incidenteIcon });
+                marker.feature = feature;
+                return marker;
+            },
+            onEachFeature: (feature, layer) => {
+                const props = feature.properties;
+                const popupContent = `
+                    <b style="font-size: 1.1em;">Incidente Registrado</b><br>
+                    <strong>Accidentado:</strong> ${props.nombre_accidentado || "No disponible"}<br>
+                    <strong>Fecha:</strong> ${props.fecha_incidente || "N/A"}<br>
+                    <strong>Hospital Destino:</strong> ${props.hospital_destino || "No disponible"}<br> 
+                    <div class="popup-actions">
+                    <button class="btn-popup btn-editar-incidente" data-id="${props.id}">✏️ Editar</button>
+                    <button class="btn-popup btn-eliminar-incidente" data-id="${props.id}">🗑️ Eliminar</button>
+                </div>
+                `;
+                layer.bindPopup(popupContent);
+            }
+        });
 
-  map.addLayer(hospitalesClusterLayer);
-  return hospitalesClusterLayer;
+        incidentesClusterLayer.addLayer(geoJsonLayer);
+    }
+    return incidentesClusterLayer;
 };
 
 // --- DIBUJAR RESULTADOS ---
@@ -326,3 +407,110 @@ export const addHeatmapLayer = async () => {
     poblarMapaDeCalor();
     return heatLayer;
 };
+
+
+export const inicializarEventosPopup = (map, layerIncidentes) => {
+
+    map.on('popupopen', (e) => {
+        const marker = e.popup._source;
+        if (!marker || !marker.feature || !layerIncidentes.hasLayer(marker)) {
+            return; 
+        }
+
+        const popupNode = e.popup._container;
+        if (!popupNode) return;
+
+        // 1. Botón ELIMINAR (Corregido para usar api.js)
+        const btnEliminar = popupNode.querySelector('.btn-eliminar-incidente');
+        if (btnEliminar) {
+            L.DomEvent.on(btnEliminar, 'click', async (evt) => {
+                L.DomEvent.stop(evt); 
+                const id = btnEliminar.dataset.id;
+                if (!id) return;
+
+                if (confirm(`¿Estás seguro de que deseas eliminar el incidente #${id}?`)) {
+                    try {
+                        // --- CAMBIO AQUÍ ---
+                        // Usamos la función de api.js
+                        const data = await fetchEliminarIncidente(id);
+
+                        if (data && !data.error) {
+                            alert(data.msg);
+                            map.closePopup();
+                            layerIncidentes.removeLayer(marker); 
+                        } else {
+                            alert(`Error: ${data.error || 'No se pudo eliminar'}`);
+                        }
+                    } catch (err) {
+                        console.error('Error al eliminar:', err);
+                        alert('Error de red al intentar eliminar.');
+                    }
+                }
+            });
+        }
+
+        // 2. Botón EDITAR (Lógica sin cambios, pero la función helper SÍ cambia)
+        const btnEditar = popupNode.querySelector('.btn-editar-incidente');
+        if (btnEditar) {
+            L.DomEvent.on(btnEditar, 'click', (evt) => {
+                L.DomEvent.stop(evt);
+
+                const id = btnEditar.dataset.id;
+                const props = marker.feature.properties;
+
+                const nuevoNombre = prompt("Nuevo nombre del accidentado:", props.nombre_accidentado);
+                if (nuevoNombre === null) return; 
+
+                if (nuevoNombre) {
+                    _actualizarIncidente(id, nuevoNombre, props.usuario_registro, marker, e.popup);
+                } else {
+                    alert("El nombre es un campo requerido para editar.");
+                }
+            });
+        }
+    });
+};
+
+// --- FUNCIÓN HELPER (CORREGIDA) ---
+async function _actualizarIncidente(id, nombre, usuario, marker, popup) {
+    try {
+        // --- CAMBIO AQUÍ ---
+        // Preparamos los datos que la API espera
+        const dataToUpdate = {
+            nombre_accidentado: nombre,
+            usuario_registro: usuario 
+        };
+
+        // Usamos la función de api.js que apunta a la URL CORRECTA (.../editar/:id)
+        const data = await fetchActualizarIncidente(id, dataToUpdate);
+
+        if (data && !data.error) {
+            alert(data.msg); // Mensaje de éxito desde el backend
+
+            // 1. Actualizar los datos en el 'feature' del marcador
+            const props = marker.feature.properties;
+            props.nombre_accidentado = nombre;
+            props.usuario_registro = usuario;
+
+            // 2. Re-generar y actualizar el contenido del popup (con tu formato simple)
+            const newPopupContent = `
+                <b style="font-size: 1.1em;">Incidente Registrado</b><br>
+                <strong>Accidentado:</strong> ${props.nombre_accidentado || "No disponible"}<br>
+                <strong>Fecha:</strong> ${props.fecha_incidente || "N/A"}<br>
+                <strong>Hospital Destino:</strong> ${props.hospital_destino || "No disponible"}<br> 
+                <div class="popup-actions">
+                    <button class="btn-popup btn-editar-incidente" data-id="${props.id}">✏️ Editar</button>
+                    <button class="btn-popup btn-eliminar-incidente" data-id="${props.id}">🗑️ Eliminar</button>
+                </div>
+            `;
+            popup.setContent(newPopupContent);
+
+        } else {
+            // Muestra el error devuelto por la función de api.js
+            alert(`Error: ${data.error || 'No se pudo actualizar'}`);
+        }
+    } catch (err) {
+        console.error('Error al actualizar:', err);
+        alert('Error de red al intentar actualizar.');
+    }
+}

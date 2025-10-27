@@ -32,7 +32,7 @@ import {
 } from './api.js';
 import {
     addDepartamentosLayer, addViasLayer, addLocalidadesLayer, addHospitalesClusterLayer,
-    dibujarResultados, dibujarRuta, inicializarLeyenda, agregarItemLeyenda, quitarItemLeyenda, addHeatmapLayer
+    dibujarResultados, dibujarRuta, inicializarLeyenda, agregarItemLeyenda, quitarItemLeyenda, addHeatmapLayer, addIncidentesClusterLayer, inicializarEventosPopup
 } from './layers.js';
 
 let capaRutaReporte = L.layerGroup();
@@ -217,7 +217,8 @@ document.addEventListener('DOMContentLoaded', async () => {
     const localidadesCapa = await addLocalidadesLayer(map);
     const hospitalesCapa = await addHospitalesClusterLayer(map);
     const btnModoEdicion = document.getElementById('btn-modo-edicion');
-
+    const incidentesPuntos = await addIncidentesClusterLayer(map);
+    
     const heatLayer = await addHeatmapLayer();
     localidadesCapa.addTo(map);
     hospitalesCapa.addTo(map);
@@ -228,10 +229,11 @@ document.addEventListener('DOMContentLoaded', async () => {
         "Vías": viasCapa,
         "Localidades": localidadesCapa,
         "Hospitales": hospitalesCapa,
-        "Mapa de Calor": heatLayer
-
+        "Mapa de Calor": heatLayer,
+        "Incidentes": incidentesPuntos
     };
     L.control.layers(baseMaps, overlayMaps).addTo(map);
+    inicializarEventosPopup(map, incidentesPuntos);
 
     map.on('overlayadd', e => agregarItemLeyenda(e.name));
     map.on('overlayremove', e => quitarItemLeyenda(e.name));

@@ -62,20 +62,15 @@ const registrarIncidente = async (req, res) => {
 };
 
 
-// 2. READ ALL: Obtener todos los incidentes (para el módulo de reportes/tabla)
-// 2. READ ALL: Obtener todos los incidentes (AHORA CON FILTRO DE FECHA)
 const obtenerIncidentes = async (req, res) => {
-  // Obtenemos la fecha desde los query params (ej: /api/incidentes?fecha=2025-10-25)
   const { fecha } = req.query;
 
   try {
     let params = [];
     let whereClause = '';
 
-    // Si se proporciona una fecha, la añadimos a la consulta
     if (fecha) {
       params.push(fecha);
-      // Usamos DATE() en la columna timestamp para comparar solo la fecha
       whereClause = `WHERE DATE(fecha_incidente) = $1`;
     }
 
@@ -95,7 +90,7 @@ const obtenerIncidentes = async (req, res) => {
     const incidentesFormateados = result.rows.map(row => ({
       ...row,
       punto_geojson: JSON.parse(row.punto_geojson),
-      ruta_geojson: null, // Tu lógica original
+      ruta_geojson: null, 
       fecha_incidente: row.fecha_incidente ? row.fecha_incidente.toLocaleString() : 'N/A'
     }));
 
