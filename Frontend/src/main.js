@@ -32,7 +32,7 @@ import {
 } from './api.js';
 import {
     addDepartamentosLayer, addViasLayer, addLocalidadesLayer, addHospitalesClusterLayer,
-    dibujarResultados, dibujarRuta, inicializarLeyenda, agregarItemLeyenda, quitarItemLeyenda, addHeatmapLayer, addIncidentesClusterLayer, inicializarEventosPopup
+    dibujarResultados, dibujarRuta, inicializarLeyenda, agregarItemLeyenda, quitarItemLeyenda, addHeatmapLayer, addIncidentesClusterLayer, inicializarEventosPopup, setModoEdicionHospitales
 } from './layers.js';
 
 let capaRutaReporte = L.layerGroup();
@@ -137,14 +137,18 @@ const eliminarIncidente = async (id) => {
     }
 }
 
+
 // Función para cargar los datos en la tabla del modal
-const cargarReportes = async () => {
+const cargarReportes = async (fechaFiltro = null) => {
     const tbody = document.querySelector('#tablaReportes tbody');
     tbody.innerHTML = '<tr><td colspan="8">Cargando datos...</td></tr>';
     if (!map.hasLayer(capaRutaReporte)) capaRutaReporte.addTo(map);
     if (!map.hasLayer(capaPuntoReporte)) capaPuntoReporte.addTo(map);
 
-    const data = await fetchObtenerIncidentes();
+    // Si hay fecha, enviar al backend con parámetro
+    const data = fechaFiltro
+        ? await fetchObtenerIncidentes(fechaFiltro)
+        : await fetchObtenerIncidentes();
 
     if (data.error || !Array.isArray(data)) {
         tbody.innerHTML = `<tr><td colspan="8" style="color:red;">Error al cargar: ${data.error || 'Desconocido'}</td></tr>`;
@@ -171,24 +175,25 @@ const cargarReportes = async () => {
         actionsCell.className = 'celda-acciones';
 
         const btnVer = document.createElement('button');
-        btnVer.textContent = 'Ver';
         btnVer.className = 'btn-tabla btn-ver-incidente';
+        btnVer.innerHTML = `<img src="/5.png" alt="Ver" style="width:18px; height:18px;">`;
         btnVer.onclick = () => verIncidenteEnMapa(incidente);
         actionsCell.appendChild(btnVer);
 
         const btnEditar = document.createElement('button');
-        btnEditar.textContent = 'Editar';
         btnEditar.className = 'btn-tabla btn-editar-incidente';
+        btnEditar.innerHTML = `<img src="/6.png" alt="Editar" style="width:18px; height:18px;">`;
         btnEditar.onclick = () => editarIncidente(incidente);
         actionsCell.appendChild(btnEditar);
 
         const btnEliminar = document.createElement('button');
-        btnEliminar.textContent = 'Eliminar';
         btnEliminar.className = 'btn-tabla btn-eliminar-incidente';
+        btnEliminar.innerHTML = `<img src="/7.png" alt="Eliminar" style="width:18px; height:18px;">`;
         btnEliminar.onclick = () => eliminarIncidente(incidente.id);
         actionsCell.appendChild(btnEliminar);
     });
 };
+
 // =======================================================
 // INICIALIZACIÓN PRINCIPAL DEL MAPA
 // =======================================================
@@ -218,7 +223,7 @@ document.addEventListener('DOMContentLoaded', async () => {
     const hospitalesCapa = await addHospitalesClusterLayer(map);
     const btnModoEdicion = document.getElementById('btn-modo-edicion');
     const incidentesPuntos = await addIncidentesClusterLayer(map);
-    
+
     const heatLayer = await addHeatmapLayer();
     localidadesCapa.addTo(map);
     hospitalesCapa.addTo(map);
@@ -233,8 +238,32 @@ document.addEventListener('DOMContentLoaded', async () => {
         "Incidentes": incidentesPuntos
     };
     L.control.layers(baseMaps, overlayMaps).addTo(map);
-    inicializarEventosPopup(map, incidentesPuntos);
+    inicializarEventosPopup(map, incidentesPuntos, hospitalesCapa);
 
+
+    let edicionHabilitada = false;
+    if (btnModoEdicion) {
+        btnModoEdicion.textContent = '✏️';
+        btnModoEdicion.addEventListener('click', () => {
+            console.log("¡Clic detectado!"); 
+            edicionHabilitada = !edicionHabilitada;
+            console.log("Nuevo estado edicionHabilitada:", edicionHabilitada);
+            setModoEdicionHospitales(edicionHabilitada);
+
+            if (edicionHabilitada) {
+                btnModoEdicion.textContent = '✏️ Edición: ON';
+                btnModoEdicion.classList.add('activo');
+                Swal.fire({ toast: true, position: 'top-end', icon: 'info', title: 'Modo Edición Activado', showConfirmButton: false, timer: 1500 });
+            } else {
+                btnModoEdicion.textContent = '✏️ ';
+                btnModoEdicion.classList.remove('activo'); 
+
+                Swal.fire({ toast: true, position: 'top-end', icon: 'info', title: 'Modo Edición Desactivado', showConfirmButton: false, timer: 1500 });
+            }
+        });
+    } else {
+        console.error("No se encontró el botón con id 'btn-modo-edicion'");
+    }
     map.on('overlayadd', e => agregarItemLeyenda(e.name));
     map.on('overlayremove', e => quitarItemLeyenda(e.name));
     // =======================================================
@@ -364,7 +393,6 @@ document.addEventListener('DOMContentLoaded', async () => {
     };
 
     map.on('pm:create', (e) => {
-        // 👇 Solo ejecutar si se está dibujando un marcador (punto)
         if (e.shape !== 'Marker') return;
 
         puntoIncidente = e.layer.getLatLng();
@@ -373,7 +401,6 @@ document.addEventListener('DOMContentLoaded', async () => {
     });
 
     bufferInput.addEventListener('keydown', (e) => { if (e.key === 'Enter') ejecutarAnalisis(); });
-    // CÁLCULO DE RUTA Y REGISTRO
     map.on('popupopen', (e) => {
         const popupNode = e.popup._container;
         const btn = popupNode.querySelector('.btn-ruta');
@@ -436,7 +463,6 @@ document.addEventListener('DOMContentLoaded', async () => {
                 icon: 'info',
                 confirmButtonText: 'Entendido'
             }).then(() => {
-                // Activar modo dibujo
                 map.pm.enableDraw('Polygon', {
                     finishOn: 'dblclick',
                     allowSelfIntersection: false,
@@ -445,12 +471,9 @@ document.addEventListener('DOMContentLoaded', async () => {
             });
         };
     }
-
     map.on('pm:create', async (e) => {
         if (e.shape !== 'Polygon') return;
-
         capaAnalisisPoligono.clearLayers();
-
         const polygonLayer = e.layer.addTo(capaAnalisisPoligono);
         map.pm.disableDraw();
 
@@ -470,8 +493,6 @@ document.addEventListener('DOMContentLoaded', async () => {
             Swal.fire('Sin resultados', 'No hay hospitales ni accidentes en el área seleccionada.', 'info');
             return;
         }
-
-        // Agregar marcadores al mapa
         resultados.forEach(item => {
             if (!item.lat || !item.lon || isNaN(item.lat) || isNaN(item.lon)) return;
 
@@ -490,7 +511,6 @@ document.addEventListener('DOMContentLoaded', async () => {
         const incidentes = resultados.filter(r => r.tipo === 'Accidente');
         const localidades = [...new Set(resultados.map(r => r.localidad))];
 
-        // Mostrar totales en el resumen
         document.getElementById('totalHospitales').textContent = hospitales.length;
         document.getElementById('totalIncidentes').textContent = incidentes.length;
         document.getElementById('totalLocalidades').textContent = localidades.length;
@@ -519,25 +539,19 @@ document.addEventListener('DOMContentLoaded', async () => {
           `).join('')
             : `<tr><td colspan="2">Sin datos</td></tr>`;
 
-        // Mostrar el modal con resultados
         modalAnalisis.style.display = 'flex';
     });
 
-    // 🔹 Cerrar el modal
     if (cerrarModalAnalisis) {
         cerrarModalAnalisis.addEventListener('click', () => {
             modalAnalisis.style.display = 'none';
         });
     }
-
-    // 🔹 Cerrar si el usuario hace clic fuera del contenido
     window.addEventListener('click', (e) => {
         if (e.target === modalAnalisis) {
             modalAnalisis.style.display = 'none';
         }
     });
-
-
 
     // =======================================================
     // LÓGICA DEL MODAL DE REPORTES (CON FILTROS)
@@ -548,7 +562,6 @@ document.addEventListener('DOMContentLoaded', async () => {
     const inputFecha = document.getElementById('filtro-fecha');
     const btnFiltrar = document.getElementById('btn-filtrar-fecha');
     const btnLimpiarFiltro = document.getElementById('btn-limpiar-filtro');
-
 
     if (btnReportes) {
         btnReportes.onclick = () => {

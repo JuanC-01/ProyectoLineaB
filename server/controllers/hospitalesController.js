@@ -74,23 +74,18 @@ const getTodosLosHospitales = async (req, res) => {
 };
 
 const updateHospital = async (req, res) => {
+    console.log("--- updateHospital ---");
+    console.log("req.body:", req.body);
+
     const { id, nombre, lat, lon } = req.body;
-
-    if (!id) {
-        return res.status(400).json({ message: "El ID del hospital es requerido." });
-    }
-
-    // Verifica que haya al menos un campo a actualizar
-    if ((!nombre || nombre.trim() === '') && (lat === undefined || lon === undefined)) {
-        return res.status(400).json({ message: "Debe enviar al menos un campo (nombre o coordenadas)." });
-    }
 
     try {
         let query;
         let params;
+        let caseEntered = "None";
 
-        // --- Caso 1: editar nombre y ubicación ---
         if (nombre && lat !== undefined && lon !== undefined) {
+            caseEntered = "Case 1: Name + Location";
             query = `
                 UPDATE rasa
                 SET rsoentadsc = $1,
@@ -100,8 +95,9 @@ const updateHospital = async (req, res) => {
             `;
             params = [nombre.trim(), lon, lat, id];
         }
-        // --- Caso 2: solo editar nombre ---
+
         else if (nombre && (lat === undefined || lon === undefined)) {
+            caseEntered = "Case 2: Name Only";
             query = `
                 UPDATE rasa
                 SET rsoentadsc = $1
@@ -110,8 +106,9 @@ const updateHospital = async (req, res) => {
             `;
             params = [nombre.trim(), id];
         }
-        // --- Caso 3: solo mover hospital (sin cambiar nombre) ---
+
         else if (!nombre && lat !== undefined && lon !== undefined) {
+            caseEntered = "Case 3: Location Only";
             query = `
                 UPDATE rasa
                 SET geom = ST_SetSRID(ST_MakePoint($1, $2), 4326)
@@ -121,36 +118,75 @@ const updateHospital = async (req, res) => {
             params = [lon, lat, id];
         }
 
-        const result = await pool.query(query, params);
-
-        if (result.rows.length === 0) {
-            return res.status(404).json({ message: "Hospital no encontrado." });
+        else {
+            caseEntered = "Case 4: Invalid combination or no data";
         }
 
-        const row = result.rows[0];
-        const updatedFeature = {
-            type: "Feature",
-            properties: {
-                gid: row.gid,
-                id: row.gid,
-                nombre: row.rsoentadsc,
-                direccion: row.dirsirep,
-                nivel: row.nivel,
-                tipo: row.njuridica,
-                prestador: row.clprestado
-            },
-            geometry: JSON.parse(row.geojson)
-        };
+        console.log("Case Entered:", caseEntered);
+        console.log("SQL Query:", query);
+        console.log("Parameters:", params);
 
-        res.json(updatedFeature);
+        if (!query || !params) {
+            console.error("Query or Params not set correctly for Case:", caseEntered);
+            return res.status(400).json({ error: "Datos de actualización inválidos." });
+        }
+
+        const result = await pool.query(query, params);
+        if (result.rowCount === 0) {
+            return res.status(404).json({ error: "Hospital no encontrado." });
+        }
+        console.log("✅ Hospital actualizado correctamente:", result.rows[0]);
+        return res.status(200).json({
+            msg: "Hospital actualizado correctamente.",
+            hospital: result.rows[0],
+        });
+
     } catch (err) {
-        console.error("Error en updateHospital:", err.message);
-        res.status(500).json({ message: "Error interno del servidor al actualizar el hospital." });
+        console.error("!!! DATABASE ERROR in updateHospital:", err);
+        console.error("Failed Query:", query);
+        console.error("Failed Params:", params);
+        res.status(500).json({ error: "Error interno del servidor al actualizar el hospital." });
+    }
+};
+
+
+const deleteHospital = async (req, res) => {
+    const { id } = req.params;
+
+    console.log(`--- deleteHospital --- Intentando eliminar hospital con gid: ${id}`); 
+
+    if (!id || isNaN(parseInt(id))) { 
+        return res.status(400).json({ error: "El ID del hospital es inválido." });
+    }
+    try {
+        const query = `
+            DELETE FROM rasa
+            WHERE gid = $1
+            RETURNING gid; -- Devuelve el ID si se eliminó algo
+        `;
+        const params = [parseInt(id)]; 
+        console.log("SQL Query:", query);
+        console.log("Parameters:", params);
+
+        const result = await pool.query(query, params);
+        if (result.rowCount === 0) {
+            console.log(`Hospital con gid ${id} no encontrado.`);
+            return res.status(404).json({ error: "Hospital no encontrado." });
+        }
+
+        console.log(` Hospital con gid ${id} eliminado correctamente.`);
+        res.status(200).json({ msg: `Hospital #${id} eliminado correctamente.` }); 
+
+    } catch (err) {
+        console.error("!!! DATABASE ERROR in deleteHospital:", err);
+        res.status(500).json({ error: "Error interno del servidor al eliminar el hospital." });
     }
 };
 
 module.exports = {
     getHospitalesCercanos,
     getTodosLosHospitales,
-    updateHospital
+    updateHospital,
+    deleteHospital 
 };
+

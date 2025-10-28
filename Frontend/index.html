@@ -3,7 +3,7 @@
 
 <head>
     <meta charset="UTF-8" />
-    <link rel="icon" type="image/svg+xml" href="/vite.svg" />
+    <link rel="icon" type="image/svg+xml" href="/iconhos.png" />
     <meta name="viewport" content="width=device-width, initial-scale=1.0" />
     <title>Visor de Hospitales - Bogotá</title>
 
@@ -12,7 +12,12 @@
 
 <body>
     <header class="main-header">
-        <h1>🏥 Visor Interactivo de Hospitales - Bogotá D.C.</h1>
+        <h1 style="display: flex; align-items: center; gap: 10px;">
+            <img src="/iconhos.png" alt="Hospital" style="width: 40px; height: 40px;">
+            Visor Interactivo de Hospitales - Bogotá D.C.
+        </h1>
+
+
     </header>
     <main class="main-content">
         <section id="search-container" aria-label="Buscar hospitales o localidades">
@@ -74,16 +79,19 @@
                             </svg>
                         </a>
                     </div>
-                    <!-- Botón Análisis por Polígono -->
                     <div class="leaflet-bar leaflet-control">
                         <a id="btn-analisis-poligono" href="#" title="Análisis por Polígono" class="polygon-toggle-btn">
                             <img src="/poligono.png" alt="Análisis por Polígono" style="width:24px;height:24px;">
                         </a>
                     </div>
 
-
+                    <button id="btn-modo-edicion" class="modo-edicion-btn">
+                        ✏️
+                    </button>
                 </div>
+
             </div>
+
         </div>
 
     </main>
@@ -91,15 +99,26 @@
     <div id="modalReportes" role="dialog" aria-modal="true" aria-labelledby="modal-header">
         <div id="modal-content">
             <div id="modal-header">
-                <h2>Reporte de Incidentes</h2>
+                <h2>
+                    <img src="/2.png" alt="Resultados" style="width: 40px; height: 40px;">
+                    Reporte de Incidentes
+                </h2>
                 <button id="cerrarModal" aria-label="Cerrar">&times;</button>
             </div>
 
             <div class="report-filters">
                 <label for="filtro-fecha">Filtrar por fecha:</label>
                 <input type="date" id="filtro-fecha">
-                <button id="btn-filtrar-fecha" class="btn-tabla btn-ver-incidente">Filtrar</button>
-                <button id="btn-limpiar-filtro" class="btn-tabla btn-editar-incidente">Quitar Filtro</button>
+                <button id="btn-filtrar-fecha" class="btn-tabla btn-ver-incidente">
+                    <img src="/8.png" alt="Filtrar"
+                        style="width:18px; height:18px; vertical-align:middle; margin-right:6px;">
+                    Filtrar
+                </button>
+
+                <button id="btn-limpiar-filtro" class="btn-tabla btn-editar-incidente">
+                    <img src="/9.png" alt="Filtrar"
+                        style="width:18px; height:18px; vertical-align:middle; margin-right:6px;">
+                    Quitar Filtro</button>
             </div>
             <div class="tabla-container">
                 <table id="tablaReportes">
@@ -129,22 +148,34 @@
     <div id="modalAnalisis" class="modal" role="dialog" aria-modal="true">
         <div class="modal-content">
             <div class="modal-header">
-                <h2>📊 Resultados del Análisis por Polígono</h2>
+                <h2>
+                    <img src="/2.png" alt="Resultados" style="width: 40px; height: 40px;">
+                    Resultados del Análisis por Polígono
+                </h2>
                 <button id="cerrarModalAnalisis" aria-label="Cerrar">&times;</button>
             </div>
 
             <div class="modal-body">
                 <div id="resumenAnalisis" class="resumen-analisis">
                     <div class="resumen-card">
-                        <h4>🏥 Hospitales</h4>
+                        <h4>
+                            <img src="/iconhos.png" alt="Hospital" style="width: 40px; height: 40px;">
+                            Hospitales
+                        </h4>
                         <p id="totalHospitales">0</p>
                     </div>
                     <div class="resumen-card">
-                        <h4>🚑 Incidentes</h4>
+                        <h4>
+                            <img src="/3.png" alt="Resultados" style="width: 40px; height: 40px;">
+                            Incidentes
+                        </h4>
                         <p id="totalIncidentes">0</p>
                     </div>
                     <div class="resumen-card">
-                        <h4>📍 Localidades</h4>
+                        <h4>
+                            <img src="/4.png" alt="Resultados" style="width: 40px; height: 40px;">
+                            Localidades
+                        </h4>
                         <p id="totalLocalidades">0</p>
                     </div>
                 </div>

@@ -1,8 +1,11 @@
 import L from 'leaflet';
 import 'leaflet.heat';
 import * as turf from '@turf/turf';
-import { fetchTodosLosHospitales, fetchLocalidadesConConteo, fetchObtenerIncidentes, fetchActualizarIncidente, 
-    fetchEliminarIncidente } from './api.js';
+import Swal from 'sweetalert2';
+import {
+    fetchTodosLosHospitales, fetchLocalidadesConConteo, fetchObtenerIncidentes, fetchActualizarIncidente,
+    fetchEliminarIncidente, fetchActualizarHospital, fetchEliminarHospital
+} from './api.js';
 const resultadosLayer = L.featureGroup();
 const rutaLayer = L.layerGroup();
 let hospitalesClusterLayer;
@@ -33,7 +36,7 @@ function estiloLocalidad(feature) {
     };
 }
 
-// --- NUEVA LÓGICA DE LEYENDA ---
+// --- LEYENDA ---
 const leyendaItems = {};
 let baseMapActivo = 'Normal';
 export const inicializarLeyenda = (map, baseMaps) => {
@@ -130,7 +133,7 @@ export const agregarItemLeyenda = (nombreCapa) => {
                 <span style="float: right; font-size: 11px;">Alta</span>
         </div>`;
             break;
-        case "Incidentes": // Asegúrate que este nombre coincida con el de tu control de capas
+        case "Incidentes":
             leyendaItems[nombreCapa] = `
         <div class="leyenda-item">
             <img src="/accidente.png" height="20" width="20"> Incidentes
@@ -196,8 +199,40 @@ export const addLocalidadesLayer = async (map) => {
     return localidadesLayer;
 };
 
-let modoEdicionActivo = false;
 
+let modoEdicionHospitalesActivo = false;
+export const setModoEdicionHospitales = (estaActivo) => {
+    modoEdicionHospitalesActivo = estaActivo;
+};
+
+
+function _generarPopupHospital(props) {
+
+    let popupContent = `
+        <b>${props.nombre}</b><br> 
+        <img src="/hospital.jpg" alt="Hospital" 
+        style="width:100%; max-height:150px; object-fit:cover; margin-top:5px; border-radius: 4px;"> 
+        <hr>
+        <strong>Dirección:</strong> ${props.direccion || "No disponible"}<br>
+        <strong>Nivel:</strong> ${props.nivel || "No disponible"}<br>
+        <strong>Tipo:</strong> ${props.tipo || "No disponible"}<br>
+        <strong>Prestador:</strong> ${props.prestador || "No disponible"}
+        `;
+    if (modoEdicionHospitalesActivo) {
+        const estaHabilitado = props.habilitado !== false;
+        const textoBoton = estaHabilitado ? "Deshabilitar" : "Habilitar";
+        const iconoBoton = estaHabilitado ? "🔄" : "✅";
+        popupContent += `
+        <hr style="margin: 8px 0;">
+            <div class="popup-actions">
+                <button class="btn-popup btn-editar-hospital" data-id="${props.gid}">✏️</button>
+                <button class="btn-popup btn-eliminar-hospital" data-id="${props.gid}">🗑️</button>
+            </div>
+            `;
+    }
+
+    return popupContent;
+}
 // --- HOSPITALES ---
 export const addHospitalesClusterLayer = async (map) => {
     hospitalesClusterLayer = L.markerClusterGroup({
@@ -222,24 +257,14 @@ export const addHospitalesClusterLayer = async (map) => {
         const geoJsonLayer = L.geoJSON(todosLosHospitales, {
             pointToLayer: (feature, latlng) => {
                 const marker = L.marker(latlng, { icon: hospitalIcon });
-                marker.feature = feature; // Guardar propiedades
+                marker.feature = feature;
                 return marker;
             },
             onEachFeature: (feature, layer) => {
                 const props = feature.properties;
-                const popupContent = `
-          <b>${props.nombre}</b><br>  
-          <img src="/hospital.jpg" alt="Hospital" 
-               style="width:100%; max-height:150px; object-fit:cover; margin-top:5px; border-radius: 4px;">
-          <hr>
-          <strong>Dirección:</strong> ${props.direccion || "No disponible"}<br>
-          <strong>Nivel:</strong> ${props.nivel || "No disponible"}<br>
-          <strong>Tipo:</strong> ${props.tipo || "No disponible"}<br>
-          <strong>Prestador:</strong> ${props.prestador || "No disponible"}
-          
-        `;
-                layer.bindPopup(popupContent);
+                layer.bindPopup(() => _generarPopupHospital(props));
             },
+
         });
 
         hospitalesClusterLayer.addLayer(geoJsonLayer);
@@ -252,25 +277,19 @@ export const addHospitalesClusterLayer = async (map) => {
 //Incidentes
 export const addIncidentesClusterLayer = async (map) => {
     const incidentesClusterLayer = L.markerClusterGroup({
-
-        // --- AÑADIDO: Estilos de clúster personalizados para incidentes ---
         iconCreateFunction: (cluster) => {
             const childCount = cluster.getChildCount();
             let cssClass = "";
-
-            // Usamos nombres de clases diferentes a los de hospitales
             if (childCount < 10) cssClass = "incidente-cluster-small";
             else if (childCount < 100) cssClass = "incidente-cluster-medium";
             else cssClass = "incidente-cluster-large";
 
             return L.divIcon({
                 html: `<div><span>${childCount}</span></div>`,
-                className: `incidente-cluster ${cssClass}`, // Clase base 'incidente-cluster'
+                className: `incidente-cluster ${cssClass}`,
                 iconSize: L.point(40, 40),
             });
         },
-        // --- FIN DE LA ADICIÓN ---
-
     });
     const data = await fetchObtenerIncidentes();
 
@@ -297,15 +316,19 @@ export const addIncidentesClusterLayer = async (map) => {
             onEachFeature: (feature, layer) => {
                 const props = feature.properties;
                 const popupContent = `
-                    <b style="font-size: 1.1em;">Incidente Registrado</b><br>
-                    <strong>Accidentado:</strong> ${props.nombre_accidentado || "No disponible"}<br>
-                    <strong>Fecha:</strong> ${props.fecha_incidente || "N/A"}<br>
-                    <strong>Hospital Destino:</strong> ${props.hospital_destino || "No disponible"}<br> 
-                    <div class="popup-actions">
-                    <button class="btn-popup btn-editar-incidente" data-id="${props.id}">✏️ Editar</button>
-                    <button class="btn-popup btn-eliminar-incidente" data-id="${props.id}">🗑️ Eliminar</button>
-                </div>
-                `;
+            <b style="font-size: 1.1em;">🚨 Incidente Registrado</b><br>
+            <strong>Accidentado:</strong> ${props.nombre_accidentado || "No disponible"}<br>
+            <strong>Fecha:</strong> ${props.fecha_incidente || "N/A"}<br>
+            <strong>Hospital Destino:</strong> ${props.hospital_destino || "No disponible"}<br>
+            <div class="popup-actions" style="margin-top: 6px; display: flex; gap: 6px; justify-content: center;">
+                <button class="btn-popup btn-editar-incidente" data-id="${props.id}">
+                    <img src="/6.png" alt="Editar" style="width:18px; height:18px; vertical-align:middle;">
+                </button>
+                <button class="btn-popup btn-eliminar-incidente" data-id="${props.id}">
+                    <img src="/7.png" alt="Eliminar" style="width:18px; height:18px; vertical-align:middle;">
+                </button>
+            </div>
+            `;
                 layer.bindPopup(popupContent);
             }
         });
@@ -408,109 +431,227 @@ export const addHeatmapLayer = async () => {
     return heatLayer;
 };
 
+export const inicializarEventosPopup = (map, layerIncidentes, layerHospitales) => {
 
-export const inicializarEventosPopup = (map, layerIncidentes) => {
+    map.on('popupopen', (e) => {
+        const marker = e.popup._source;
+        const popupNode = e.popup._container;
+        if (!marker || !marker.feature || !popupNode) {
+            return;
+        }
 
-    map.on('popupopen', (e) => {
-        const marker = e.popup._source;
-        if (!marker || !marker.feature || !layerIncidentes.hasLayer(marker)) {
-            return; 
-        }
-
-        const popupNode = e.popup._container;
-        if (!popupNode) return;
-
-        // 1. Botón ELIMINAR (Corregido para usar api.js)
-        const btnEliminar = popupNode.querySelector('.btn-eliminar-incidente');
-        if (btnEliminar) {
-            L.DomEvent.on(btnEliminar, 'click', async (evt) => {
-                L.DomEvent.stop(evt); 
-                const id = btnEliminar.dataset.id;
-                if (!id) return;
-
-                if (confirm(`¿Estás seguro de que deseas eliminar el incidente #${id}?`)) {
-                    try {
-                        // --- CAMBIO AQUÍ ---
-                        // Usamos la función de api.js
-                        const data = await fetchEliminarIncidente(id);
-
-                        if (data && !data.error) {
-                            alert(data.msg);
-                            map.closePopup();
-                            layerIncidentes.removeLayer(marker); 
-                        } else {
-                            alert(`Error: ${data.error || 'No se pudo eliminar'}`);
-                        }
-                    } catch (err) {
-                        console.error('Error al eliminar:', err);
-                        alert('Error de red al intentar eliminar.');
-                    }
-                }
-            });
-        }
-
-        // 2. Botón EDITAR (Lógica sin cambios, pero la función helper SÍ cambia)
-        const btnEditar = popupNode.querySelector('.btn-editar-incidente');
-        if (btnEditar) {
-            L.DomEvent.on(btnEditar, 'click', (evt) => {
-                L.DomEvent.stop(evt);
-
-                const id = btnEditar.dataset.id;
-                const props = marker.feature.properties;
-
-                const nuevoNombre = prompt("Nuevo nombre del accidentado:", props.nombre_accidentado);
-                if (nuevoNombre === null) return; 
-
-                if (nuevoNombre) {
-                    _actualizarIncidente(id, nuevoNombre, props.usuario_registro, marker, e.popup);
-                } else {
-                    alert("El nombre es un campo requerido para editar.");
-                }
-            });
-        }
-    });
+        if (layerIncidentes.hasLayer(marker)) {
+            const btnEliminarInc = popupNode.querySelector('.btn-eliminar-incidente');
+            if (btnEliminarInc) {
+                L.DomEvent.on(btnEliminarInc, 'click', (evt) => {
+                    L.DomEvent.stop(evt);
+                    const id = btnEliminarInc.dataset.id;
+                    if (!id) return;
+                    Swal.fire({
+                        title: '¿Estás seguro?',
+                        text: `¡No podrás revertir esto! (Incidente #${id})`,
+                        icon: 'warning',
+                        showCancelButton: true,
+                        confirmButtonColor: '#d33',
+                        cancelButtonColor: '#3085d6',
+                        confirmButtonText: 'Sí, ¡eliminar!',
+                        cancelButtonText: 'Cancelar'
+                    }).then(async (result) => {
+                        if (result.isConfirmed) {
+                            try {
+                                const data = await fetchEliminarIncidente(id);
+                                if (data && !data.error) {
+                                    Swal.fire('¡Eliminado!', data.msg, 'success');
+                                    map.closePopup();
+                                    layerIncidentes.removeLayer(marker);
+                                } else {
+                                    Swal.fire('Error', data.error || 'No se pudo eliminar', 'error');
+                                }
+                            } catch (err) {
+                                console.error('Error al eliminar:', err);
+                                Swal.fire('Error de Red', 'No se pudo conectar para eliminar el incidente.', 'error');
+                            }
+                        }
+                    });
+                });
+            }
+            const btnEditarInc = popupNode.querySelector('.btn-editar-incidente');
+            if (btnEditarInc) {
+                L.DomEvent.on(btnEditarInc, 'click', (evt) => {
+                    L.DomEvent.stop(evt);
+                    const id = btnEditarInc.dataset.id;
+                    const props = marker.feature.properties;
+                    (async () => {
+                        const { value: nuevoNombre } = await Swal.fire({
+                            title: 'Actualizar Incidente',
+                            input: 'text',
+                            inputLabel: 'Nuevo nombre del accidentado',
+                            inputValue: props.nombre_accidentado,
+                            showCancelButton: true,
+                            confirmButtonText: 'Actualizar',
+                            cancelButtonText: 'Cancelar',
+                            inputValidator: (value) => !value && '¡El nombre es obligatorio!'
+                        });
+                        if (nuevoNombre) {
+                            _actualizarIncidente(id, nuevoNombre, props.usuario_registro, marker, e.popup);
+                        }
+                    })();
+                });
+            }
+        }
+        else if (layerHospitales && layerHospitales.hasLayer(marker)) {
+            const btnEditarHosp = popupNode.querySelector('.btn-editar-hospital');
+            if (btnEditarHosp) {
+                L.DomEvent.on(btnEditarHosp, 'click', (evt) => {
+                    L.DomEvent.stop(evt);
+                    const id = btnEditarHosp.dataset.id;
+                    const props = marker.feature.properties;
+                    (async () => {
+                        const { value: nuevoNombre } = await Swal.fire({
+                            title: 'Actualizar Hospital',
+                            input: 'text',
+                            inputLabel: 'Nuevo nombre del hospital',
+                            inputValue: props.nombre,
+                            showCancelButton: true,
+                            confirmButtonText: 'Actualizar',
+                            cancelButtonText: 'Cancelar',
+                            inputValidator: (v) => !v && 'El nombre es obligatorio'
+                        });
+                        if (nuevoNombre) {
+                            _actualizarHospital(id, nuevoNombre, marker, e.popup);
+                        }
+                    })();
+                });
+            }
+            const btnEliminarHosp = popupNode.querySelector('.btn-eliminar-hospital');
+            if (btnEliminarHosp) {
+                L.DomEvent.on(btnEliminarHosp, 'click', (evt) => {
+                    L.DomEvent.stop(evt);
+                    const gid = btnEliminarHosp.dataset.id;
+                    if (!gid) return;
+                    Swal.fire({
+                        title: '¿Estás seguro?',
+                        text: `Se eliminará el hospital #${gid}. ¡Esta acción no se puede deshacer!`,
+                        icon: 'warning',
+                        showCancelButton: true,
+                        confirmButtonColor: '#d33',
+                        cancelButtonColor: '#3085d6',
+                        confirmButtonText: 'Sí, ¡eliminar!',
+                        cancelButtonText: 'Cancelar'
+                    }).then(async (result) => {
+                        if (result.isConfirmed) {
+                            try {
+                                const deleteResult = await fetchEliminarHospital(gid);
+                                if (deleteResult && !deleteResult.error) {
+                                    Swal.fire(
+                                        '¡Eliminado!',
+                                        deleteResult.msg || `Hospital #${gid} eliminado.`,
+                                        'success'
+                                    );
+                                    map.closePopup();
+                                    layerHospitales.removeLayer(marker);
+                                } else {
+                                    Swal.fire(
+                                        'Error',
+                                        deleteResult.error || 'No se pudo eliminar el hospital.',
+                                        'error'
+                                    );
+                                }
+                            } catch (err) { 
+                                console.error('Error en el proceso de eliminación del hospital:', err);
+                                Swal.fire(
+                                    'Error de Red',
+                                    'No se pudo conectar para eliminar el hospital.',
+                                    'error'
+                                );
+                            }
+                        }
+                    });
+                });
+            }
+            const btnToggleHosp = popupNode.querySelector('.btn-toggle-hospital');
+            if (btnToggleHosp) {
+                L.DomEvent.on(btnToggleHosp, 'click', (evt) => {
+                    L.DomEvent.stop(evt);
+                    Swal.fire('Función No Disponible', 'La API para cambiar el estado de hospitales aún no está implementada.', 'info');
+                });
+            }
+        }
+    });
 };
 
-// --- FUNCIÓN HELPER (CORREGIDA) ---
 async function _actualizarIncidente(id, nombre, usuario, marker, popup) {
-    try {
-        // --- CAMBIO AQUÍ ---
-        // Preparamos los datos que la API espera
+    try {
         const dataToUpdate = {
             nombre_accidentado: nombre,
-            usuario_registro: usuario 
+            usuario_registro: usuario
         };
+        const data = await fetchActualizarIncidente(id, dataToUpdate);
 
-        // Usamos la función de api.js que apunta a la URL CORRECTA (.../editar/:id)
-        const data = await fetchActualizarIncidente(id, dataToUpdate);
+        if (data && !data.error) {
+            Swal.fire({
+                title: '¡Actualizado!',
+                text: data.msg,
+                icon: 'success'
+            });
+            const props = marker.feature.properties;
+            props.nombre_accidentado = nombre;
+            props.usuario_registro = usuario;
+            const newPopupContent = `
+                <b style="font-size: 1.1em;">Incidente Registrado</b><br>
+                <strong>Accidentado:</strong> ${props.nombre_accidentado || "No disponible"}<br>
+                <strong>Fecha:</strong> ${props.fecha_incidente || "N/A"}<br>
+                <strong>Hospital Destino:</strong> ${props.hospital_destino || "No disponible"}<br> 
+                <div class="popup-actions">
+                    <button class="btn-popup btn-editar-incidente" data-id="${props.id}">✏️ Editar</button>
+                    <button class="btn-popup btn-eliminar-incidente" data-id="${props.id}">🗑️ Eliminar</button>
+                </div>
+`;
+            popup.setContent(newPopupContent);
 
-        if (data && !data.error) {
-            alert(data.msg); // Mensaje de éxito desde el backend
+        } else {
+            Swal.fire({
+                title: 'Error',
+                text: data.error || 'No se pudo actualizar',
+                icon: 'error'
+            });
+        }
+    } catch (err) {
+        console.error('Error al actualizar:', err);
+        Swal.fire({
+            title: 'Error de Red',
+            text: 'No se pudo conectar para actualizar el incidente.',
+            icon: 'error'
+        });
+    }
+}
+async function _actualizarHospital(id, nombre, marker, popup) {
+    try {
+        const dataToUpdate = { id, nombre };
+        const data = await fetchActualizarHospital(dataToUpdate);
+        if (data && !data.error) {
+            Swal.fire(
+                '¡Actualizado!',
+                data.msg || data.message || 'Hospital actualizado correctamente.',
+                'success'
+            );
+            const props = marker.feature.properties;
+            props.nombre = nombre;
+            const newPopupContent = _generarPopupHospital(props);
+            popup.setContent(newPopupContent);
 
-            // 1. Actualizar los datos en el 'feature' del marcador
-            const props = marker.feature.properties;
-            props.nombre_accidentado = nombre;
-            props.usuario_registro = usuario;
-
-            // 2. Re-generar y actualizar el contenido del popup (con tu formato simple)
-            const newPopupContent = `
-                <b style="font-size: 1.1em;">Incidente Registrado</b><br>
-                <strong>Accidentado:</strong> ${props.nombre_accidentado || "No disponible"}<br>
-                <strong>Fecha:</strong> ${props.fecha_incidente || "N/A"}<br>
-                <strong>Hospital Destino:</strong> ${props.hospital_destino || "No disponible"}<br> 
-                <div class="popup-actions">
-                    <button class="btn-popup btn-editar-incidente" data-id="${props.id}">✏️ Editar</button>
-                    <button class="btn-popup btn-eliminar-incidente" data-id="${props.id}">🗑️ Eliminar</button>
-                </div>
-            `;
-            popup.setContent(newPopupContent);
-
-        } else {
-            // Muestra el error devuelto por la función de api.js
-            alert(`Error: ${data.error || 'No se pudo actualizar'}`);
-        }
-    } catch (err) {
-        console.error('Error al actualizar:', err);
-        alert('Error de red al intentar actualizar.');
-    }
+        } else {
+            Swal.fire(
+                'Error',
+                data.error || data.message || 'No se pudo actualizar el hospital.',
+                'error'
+            );
+        }
+    } catch (err) {
+        Swal.fire(
+            'Error de Red',
+            'No se pudo conectar con el servidor para actualizar.',
+            'error'
+        );
+    }
 }

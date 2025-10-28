@@ -1,6 +1,5 @@
-const pool = require('../config/db'); // Asume que tienes esta línea
+const pool = require('../config/db'); 
 
-// 1. CREATE: Registra un nuevo incidente
 const registrarIncidente = async (req, res) => {
   const {
     nombre_accidentado,
@@ -40,7 +39,7 @@ const registrarIncidente = async (req, res) => {
     const result = await pool.query(sql, [
       nombre_accidentado,
       usuario_registro,
-      lng, // orden correcto: (lon, lat)
+      lng, 
       lat,
       hospital_destino,
       distancia_km,
@@ -48,7 +47,7 @@ const registrarIncidente = async (req, res) => {
     ]);
 
     res.status(201).json({
-      msg: '✅ Incidente registrado con éxito.',
+      msg: 'Incidente registrado con éxito.',
       incidente_id: result.rows[0].id,
       fecha_registro: result.rows[0].fecha_incidente
     });
@@ -61,17 +60,15 @@ const registrarIncidente = async (req, res) => {
   }
 };
 
-
 const obtenerIncidentes = async (req, res) => {
   const { fecha } = req.query;
-
   try {
     let params = [];
     let whereClause = '';
 
     if (fecha) {
       params.push(fecha);
-      whereClause = `WHERE DATE(fecha_incidente) = $1`;
+      whereClause = `WHERE DATE(fecha_incidente) = TO_DATE($1, 'YYYY-MM-DD')`;
     }
 
     const sql = `
@@ -80,18 +77,19 @@ const obtenerIncidentes = async (req, res) => {
         hospital_destino, distancia_km, tiempo_min,
         ST_AsGeoJSON(punto_incidente) AS punto_geojson
       FROM public.incidentes
-      ${whereClause} -- Se añade el filtro (si existe)
+      ${whereClause}
       ORDER BY fecha_incidente DESC;
     `;
-    
-    // Pasamos los parámetros (si existen) a la consulta
+
     const result = await pool.query(sql, params);
 
     const incidentesFormateados = result.rows.map(row => ({
       ...row,
       punto_geojson: JSON.parse(row.punto_geojson),
-      ruta_geojson: null, 
-      fecha_incidente: row.fecha_incidente ? row.fecha_incidente.toLocaleString() : 'N/A'
+      ruta_geojson: null,
+      fecha_incidente: row.fecha_incidente
+        ? new Date(row.fecha_incidente).toLocaleString('es-CO')
+        : 'N/A'
     }));
 
     res.json(incidentesFormateados);
@@ -101,7 +99,7 @@ const obtenerIncidentes = async (req, res) => {
   }
 };
 
-// 3. READ ONE: Obtener un incidente por ID
+
 const obtenerIncidentePorId = async (req, res) => {
   const { id } = req.params;
   try {
@@ -135,7 +133,6 @@ const obtenerIncidentePorId = async (req, res) => {
 };
 
 
-// 4. DELETE: Eliminar un incidente por ID
 const eliminarIncidente = async (req, res) => {
   const { id } = req.params;
   try {

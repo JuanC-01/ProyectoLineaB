@@ -1,4 +1,4 @@
-const API_URL =  import.meta.env.VITE_API_URL || 'http://localhost:5000/api';
+const API_URL = import.meta.env.VITE_API_URL || 'http://localhost:5000/api';
 
 /*
 
@@ -79,7 +79,7 @@ export const registrarNuevoIncidente = async (data) => {
             let errorMsg = 'Error al registrar el incidente: Error desconocido.';
             try {
                 const errorData = await response.json();
-                errorMsg = errorData.msg || errorData.error || errorMsg; 
+                errorMsg = errorData.msg || errorData.error || errorMsg;
             } catch (jsonError) {
                 errorMsg = `Error HTTP ${response.status}: ${response.statusText}`;
             }
@@ -93,9 +93,7 @@ export const registrarNuevoIncidente = async (data) => {
 };
 export const fetchObtenerIncidentes = async (fecha = null) => {
     let url = `${API_URL}/incidentes`;
-    if (fecha) {
-        url += `?fecha=${fecha}`;
-    }
+    if (fecha) url += `?fecha=${fecha}`;
     try {
         const response = await fetch(url);
         if (!response.ok) throw new Error('Error al obtener la lista de incidentes');
@@ -106,8 +104,9 @@ export const fetchObtenerIncidentes = async (fecha = null) => {
     }
 };
 
+
 export const fetchEliminarIncidente = async (id) => {
-    const url = `${API_URL}/incidentes/${id}`; 
+    const url = `${API_URL}/incidentes/${id}`;
     try {
         const response = await fetch(url, { method: 'DELETE' });
         if (!response.ok) {
@@ -157,8 +156,7 @@ export const fetchAnalisisPorPoligono = async (geometry) => {
 };
 
 /**
- * 🔄 Actualizar hospital (nombre, ubicación o ambos)
- * @param {Object} data - { id, nombre?, lat?, lon? }
+ * @param {Object} data 
  */
 export const fetchActualizarHospital = async (data) => {
     const url = `${API_URL}/hospitales/editar`;
@@ -182,7 +180,23 @@ export const fetchActualizarHospital = async (data) => {
 
         return await response.json();
     } catch (error) {
-        console.error("Error de red/API al actualizar hospital:", error.message);
         return { error: 'Error de conexión: No se pudo actualizar el hospital.' };
+    }
+};
+
+export const fetchEliminarHospital = async (id) => {
+    const url = `${API_URL}/hospitales/${id}`;
+    try {
+        const response = await fetch(url, {
+            method: 'DELETE'
+        });
+        const responseData = await response.json();
+        if (!response.ok) {
+            throw new Error(responseData.error || responseData.message || `Error HTTP ${response.status}`);
+        }
+        return responseData;
+
+    } catch (error) {
+        return { error: error.message || 'Error de conexión al eliminar hospital.' };
     }
 };

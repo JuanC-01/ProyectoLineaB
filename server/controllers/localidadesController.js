@@ -2,7 +2,6 @@ const pool = require('../config/db');
 
 const getLocalidadesConteo = async (req, res) => {
     try {
-        // La consulta ahora no necesita devolver la geometría, solo el nombre y el conteo.
         const query = `
             SELECT
                 l.locnombre AS nombre,
@@ -14,10 +13,7 @@ const getLocalidadesConteo = async (req, res) => {
             GROUP BY
                 l.locnombre;
         `;
-
         const result = await pool.query(query);
-        
-        // Devolvemos un array de objetos simple.
         const conteo = result.rows.map(row => ({
             nombre: row.nombre,
             hospital_count: parseInt(row.hospital_count, 10)
