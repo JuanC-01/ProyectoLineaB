@@ -87,7 +87,7 @@ export const actualizarLeyenda = () => {
 };
 
 export const agregarItemLeyenda = (nombreCapa) => {
-    const geoserverBase = "http://redes2.online:8080/geoserver/wms";
+    const geoserverBase = "https://redes2.online/geoserver/wms";
 
     switch (nombreCapa) {
         case "Departamentos":
